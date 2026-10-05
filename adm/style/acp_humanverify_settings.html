@@ -1,0 +1,249 @@
+{% include 'overall_header.html' %}
+
+{% include 'acp_humanverify_header.html' %}
+
+<p>{{ lang('ACP_HV_SETTINGS_EXPLAIN') }}</p>
+
+{% if S_ERROR %}
+<div class="errorbox">
+	<h3>{{ lang('WARNING') }}</h3>
+	<p>{{ ERROR_MSG }}</p>
+</div>
+{% endif %}
+
+<form id="hv_settings" method="post" action="{{ U_ACTION }}">
+
+	<fieldset>
+		<legend>{{ lang('ACP_HV_GENERAL') }}</legend>
+		<dl>
+			<dt><label for="hv_enabled">{{ lang('ACP_HV_ENABLED') ~ lang('COLON') }}</label><br><span>{{ lang('ACP_HV_ENABLED_EXPLAIN') }}</span></dt>
+			<dd>
+				<label><input type="radio" class="radio" id="hv_enabled" name="hv_enabled" value="1"{% if HV_ENABLED %} checked="checked"{% endif %}> {{ lang('YES') }}</label>
+				<label><input type="radio" class="radio" name="hv_enabled" value="0"{% if not HV_ENABLED %} checked="checked"{% endif %}> {{ lang('NO') }}</label>
+			</dd>
+		</dl>
+		<dl>
+			<dt><label>{{ lang('ACP_HV_MODE') ~ lang('COLON') }}</label><br><span>{{ lang('ACP_HV_MODE_EXPLAIN') }}</span></dt>
+			<dd>
+				<div class="hv-modes">
+				{% for mode in hv_modes %}
+					<label class="hv-mode-card">
+						<span class="hv-mode-head">
+							<input type="radio" class="radio" name="hv_mode" value="{{ mode.VALUE }}"{% if mode.S_CHECKED %} checked="checked"{% endif %}{% if not S_GD and (mode.VALUE == 'captcha' or mode.VALUE == 'puzzle') %} disabled="disabled"{% endif %}>
+							<strong>{{ mode.TITLE }}</strong>
+						</span>
+						<small>{{ mode.EXPLAIN }}</small>
+					</label>
+				{% endfor %}
+				</div>
+				{% if not S_GD %}<p class="error">{{ lang('ACP_HV_ERR_GD') }}</p>{% endif %}
+				<p class="hv-preview-links">
+					<strong>{{ lang('ACP_HV_PREVIEW') ~ lang('COLON') }}</strong>
+					{% for mode in hv_modes %}<a href="{{ mode.U_PREVIEW }}" target="_blank" rel="noopener">{{ mode.TITLE }}</a>{% if not loop.last %} | {% endif %}{% endfor %}
+					<br><span>{{ lang('ACP_HV_PREVIEW_EXPLAIN') }}</span>
+				</p>
+			</dd>
+		</dl>
+		<dl>
+			<dt><label for="hv_validity_hours">{{ lang('ACP_HV_VALIDITY') ~ lang('COLON') }}</label><br><span>{{ lang('ACP_HV_VALIDITY_EXPLAIN') }}</span></dt>
+			<dd>
+				<input type="number" id="hv_validity_hours" name="hv_validity_hours" min="0" max="8760" value="{{ HV_VALIDITY_HOURS }}" style="width: 6em;"> {{ lang('ACP_HV_HOURS') }}
+				<div class="hv-presets">
+				{% for preset in hv_validity_presets %}
+					<button type="button" class="button2" data-hv-hours="{{ preset.VALUE }}">{{ preset.TITLE }}</button>
+				{% endfor %}
+				</div>
+			</dd>
+		</dl>
+		<dl>
+			<dt><label for="hv_pow_difficulty">{{ lang('ACP_HV_DIFFICULTY') ~ lang('COLON') }}</label><br><span>{{ lang('ACP_HV_DIFFICULTY_EXPLAIN') }}</span></dt>
+			<dd>
+				<select id="hv_pow_difficulty" name="hv_pow_difficulty">
+					{% for level in 1..5 %}
+					<option value="{{ level }}"{% if HV_POW_DIFFICULTY == level %} selected="selected"{% endif %}>{{ lang('ACP_HV_DIFFICULTY_' ~ level) }}</option>
+					{% endfor %}
+				</select>
+			</dd>
+		</dl>
+		<dl>
+			<dt><label for="hv_skip_registered">{{ lang('ACP_HV_SKIP_REGISTERED') ~ lang('COLON') }}</label><br><span>{{ lang('ACP_HV_SKIP_REGISTERED_EXPLAIN') }}</span></dt>
+			<dd>
+				<label><input type="radio" class="radio" id="hv_skip_registered" name="hv_skip_registered" value="1"{% if HV_SKIP_REGISTERED %} checked="checked"{% endif %}> {{ lang('YES') }}</label>
+				<label><input type="radio" class="radio" name="hv_skip_registered" value="0"{% if not HV_SKIP_REGISTERED %} checked="checked"{% endif %}> {{ lang('NO') }}</label>
+			</dd>
+		</dl>
+		<dl>
+			<dt><label for="hv_bind_ip">{{ lang('ACP_HV_BIND_IP') ~ lang('COLON') }}</label><br><span>{{ lang('ACP_HV_BIND_IP_EXPLAIN') }}</span></dt>
+			<dd>
+				<label><input type="radio" class="radio" id="hv_bind_ip" name="hv_bind_ip" value="1"{% if HV_BIND_IP %} checked="checked"{% endif %}> {{ lang('YES') }}</label>
+				<label><input type="radio" class="radio" name="hv_bind_ip" value="0"{% if not HV_BIND_IP %} checked="checked"{% endif %}> {{ lang('NO') }}</label>
+			</dd>
+		</dl>
+	</fieldset>
+
+	<fieldset>
+		<legend>{{ lang('ACP_HV_BOTS') }}</legend>
+		<dl>
+			<dt><label for="hv_block_bots">{{ lang('ACP_HV_BLOCK_BOTS') ~ lang('COLON') }}</label><br><span>{{ lang('ACP_HV_BLOCK_BOTS_EXPLAIN') }}</span></dt>
+			<dd>
+				<label><input type="radio" class="radio" id="hv_block_bots" name="hv_block_bots" value="1"{% if HV_BLOCK_BOTS %} checked="checked"{% endif %}> {{ lang('YES') }}</label>
+				<label><input type="radio" class="radio" name="hv_block_bots" value="0"{% if not HV_BLOCK_BOTS %} checked="checked"{% endif %}> {{ lang('NO') }}</label>
+			</dd>
+		</dl>
+		<dl>
+			<dt><label for="hv_block_empty_ua">{{ lang('ACP_HV_BLOCK_EMPTY_UA') ~ lang('COLON') }}</label><br><span>{{ lang('ACP_HV_BLOCK_EMPTY_UA_EXPLAIN') }}</span></dt>
+			<dd>
+				<label><input type="radio" class="radio" id="hv_block_empty_ua" name="hv_block_empty_ua" value="1"{% if HV_BLOCK_EMPTY_UA %} checked="checked"{% endif %}> {{ lang('YES') }}</label>
+				<label><input type="radio" class="radio" name="hv_block_empty_ua" value="0"{% if not HV_BLOCK_EMPTY_UA %} checked="checked"{% endif %}> {{ lang('NO') }}</label>
+			</dd>
+		</dl>
+		<dl>
+			<dt><label for="hv_bad_agents">{{ lang('ACP_HV_BAD_AGENTS') ~ lang('COLON') }}</label><br><span>{{ lang('ACP_HV_BAD_AGENTS_EXPLAIN') }}</span></dt>
+			<dd>
+				<textarea id="hv_bad_agents" name="hv_bad_agents" rows="8" cols="45">{{ HV_BAD_AGENTS }}</textarea><br>
+				<input type="submit" class="button2" name="hv_reset_agents" value="{{ lang('ACP_HV_RESET_AGENTS') }}">
+			</dd>
+		</dl>
+		<dl>
+			<dt><label for="hv_allow_known_bots">{{ lang('ACP_HV_ALLOW_KNOWN_BOTS') ~ lang('COLON') }}</label><br><span>{{ lang('ACP_HV_ALLOW_KNOWN_BOTS_EXPLAIN') }}</span></dt>
+			<dd>
+				<label><input type="radio" class="radio" id="hv_allow_known_bots" name="hv_allow_known_bots" value="1"{% if HV_ALLOW_KNOWN_BOTS %} checked="checked"{% endif %}> {{ lang('YES') }}</label>
+				<label><input type="radio" class="radio" name="hv_allow_known_bots" value="0"{% if not HV_ALLOW_KNOWN_BOTS %} checked="checked"{% endif %}> {{ lang('NO') }}</label>
+			</dd>
+		</dl>
+		<dl>
+			<dt><label for="hv_verify_bot_dns">{{ lang('ACP_HV_VERIFY_DNS') ~ lang('COLON') }}</label><br><span>{{ lang('ACP_HV_VERIFY_DNS_EXPLAIN') }}</span></dt>
+			<dd>
+				<label><input type="radio" class="radio" id="hv_verify_bot_dns" name="hv_verify_bot_dns" value="1"{% if HV_VERIFY_BOT_DNS %} checked="checked"{% endif %}> {{ lang('YES') }}</label>
+				<label><input type="radio" class="radio" name="hv_verify_bot_dns" value="0"{% if not HV_VERIFY_BOT_DNS %} checked="checked"{% endif %}> {{ lang('NO') }}</label>
+			</dd>
+		</dl>
+		<dl>
+			<dt><label for="hv_ip_whitelist">{{ lang('ACP_HV_WHITELIST') ~ lang('COLON') }}</label><br><span>{{ lang('ACP_HV_WHITELIST_EXPLAIN', HV_YOUR_IP) }}</span></dt>
+			<dd><textarea id="hv_ip_whitelist" name="hv_ip_whitelist" rows="5" cols="45">{{ HV_IP_WHITELIST }}</textarea></dd>
+		</dl>
+	</fieldset>
+
+	<fieldset>
+		<legend>{{ lang('ACP_HV_CAPTCHA_PUZZLE') }}</legend>
+		<dl>
+			<dt><label for="hv_captcha_length">{{ lang('ACP_HV_CAPTCHA_LENGTH') ~ lang('COLON') }}</label><br><span>{{ lang('ACP_HV_CAPTCHA_LENGTH_EXPLAIN') }}</span></dt>
+			<dd><input type="number" id="hv_captcha_length" name="hv_captcha_length" min="4" max="8" value="{{ HV_CAPTCHA_LENGTH }}" style="width: 5em;"></dd>
+		</dl>
+		<dl>
+			<dt><label for="hv_puzzle_grid">{{ lang('ACP_HV_PUZZLE_GRID') ~ lang('COLON') }}</label><br><span>{{ lang('ACP_HV_PUZZLE_GRID_EXPLAIN') }}</span></dt>
+			<dd>
+				<select id="hv_puzzle_grid" name="hv_puzzle_grid">
+					<option value="3"{% if HV_PUZZLE_GRID == 3 %} selected="selected"{% endif %}>{{ lang('ACP_HV_GRID_3') }}</option>
+					<option value="4"{% if HV_PUZZLE_GRID == 4 %} selected="selected"{% endif %}>{{ lang('ACP_HV_GRID_4') }}</option>
+				</select>
+			</dd>
+		</dl>
+		<dl>
+			<dt><label for="hv_puzzle_preview">{{ lang('ACP_HV_PUZZLE_PREVIEW') ~ lang('COLON') }}</label><br><span>{{ lang('ACP_HV_PUZZLE_PREVIEW_EXPLAIN') }}</span></dt>
+			<dd>
+				<label><input type="radio" class="radio" id="hv_puzzle_preview" name="hv_puzzle_preview" value="1"{% if HV_PUZZLE_PREVIEW %} checked="checked"{% endif %}> {{ lang('YES') }}</label>
+				<label><input type="radio" class="radio" name="hv_puzzle_preview" value="0"{% if not HV_PUZZLE_PREVIEW %} checked="checked"{% endif %}> {{ lang('NO') }}</label>
+			</dd>
+		</dl>
+	</fieldset>
+
+	<fieldset>
+		<legend>{{ lang('ACP_HV_APPEARANCE') }}</legend>
+		<dl>
+			<dt><label for="hv_accent_color">{{ lang('ACP_HV_ACCENT') ~ lang('COLON') }}</label><br><span>{{ lang('ACP_HV_ACCENT_EXPLAIN') }}</span></dt>
+			<dd>
+				<input type="color" id="hv_accent_picker" value="{{ HV_ACCENT_COLOR }}" style="width: 3em; height: 2em; padding: 0; vertical-align: middle;">
+				<input type="text" id="hv_accent_color" name="hv_accent_color" value="{{ HV_ACCENT_COLOR }}" maxlength="7" size="9">
+				<input type="button" class="button2" id="hv_accent_reset" value="{{ lang('ACP_HV_ACCENT_RESET') }}" data-hv-default="#22577a">
+			</dd>
+		</dl>
+		<dl>
+			<dt><label for="hv_logo_url">{{ lang('ACP_HV_LOGO') ~ lang('COLON') }}</label><br><span>{{ lang('ACP_HV_LOGO_EXPLAIN') }}</span></dt>
+			<dd><input type="url" id="hv_logo_url" name="hv_logo_url" value="{{ HV_LOGO_URL }}" size="55" maxlength="255"></dd>
+		</dl>
+		<dl>
+			<dt><label for="hv_logo_round">{{ lang('ACP_HV_LOGO_ROUND') ~ lang('COLON') }}</label><br><span>{{ lang('ACP_HV_LOGO_ROUND_EXPLAIN') }}</span></dt>
+			<dd>
+				<label><input type="radio" class="radio" id="hv_logo_round" name="hv_logo_round" value="1"{% if HV_LOGO_ROUND %} checked="checked"{% endif %}> {{ lang('YES') }}</label>
+				<label><input type="radio" class="radio" name="hv_logo_round" value="0"{% if not HV_LOGO_ROUND %} checked="checked"{% endif %}> {{ lang('NO') }}</label>
+			</dd>
+		</dl>
+	</fieldset>
+
+	<fieldset>
+		<legend>{{ lang('ACP_HV_LOG_SETTINGS') }}</legend>
+		<dl>
+			<dt><label for="hv_log_enabled">{{ lang('ACP_HV_LOG_ENABLED') ~ lang('COLON') }}</label><br><span>{{ lang('ACP_HV_LOG_ENABLED_EXPLAIN') }}</span></dt>
+			<dd>
+				<label><input type="radio" class="radio" id="hv_log_enabled" name="hv_log_enabled" value="1"{% if HV_LOG_ENABLED %} checked="checked"{% endif %}> {{ lang('YES') }}</label>
+				<label><input type="radio" class="radio" name="hv_log_enabled" value="0"{% if not HV_LOG_ENABLED %} checked="checked"{% endif %}> {{ lang('NO') }}</label>
+			</dd>
+		</dl>
+		<dl>
+			<dt><label for="hv_log_retention_days">{{ lang('ACP_HV_RETENTION') ~ lang('COLON') }}</label><br><span>{{ lang('ACP_HV_RETENTION_EXPLAIN') }}</span></dt>
+			<dd><input type="number" id="hv_log_retention_days" name="hv_log_retention_days" min="0" value="{{ HV_LOG_RETENTION_DAYS }}" style="width: 6em;"> {{ lang('ACP_HV_DAYS') }}</dd>
+		</dl>
+		<dl>
+			<dt><label for="hv_prune_every">{{ lang('ACP_HV_PRUNE_GC') ~ lang('COLON') }}</label><br><span>{{ lang('ACP_HV_PRUNE_GC_EXPLAIN') }}</span></dt>
+			<dd>
+				{{ lang('ACP_HV_EVERY') }}
+				<input type="number" id="hv_prune_every" name="hv_prune_every" min="1" value="{{ HV_PRUNE_EVERY }}" style="width: 6em;">
+				<select name="hv_prune_unit" id="hv_prune_unit">
+					<option value="minutes"{% if not S_HV_PRUNE_HOURS %} selected="selected"{% endif %}>{{ lang('ACP_HV_MINUTES') }}</option>
+					<option value="hours"{% if S_HV_PRUNE_HOURS %} selected="selected"{% endif %}>{{ lang('ACP_HV_HOURS') }}</option>
+				</select>
+			</dd>
+		</dl>
+		<dl>
+			<dt><label for="hv_max_failures">{{ lang('ACP_HV_MAX_FAILURES') ~ lang('COLON') }}</label><br><span>{{ lang('ACP_HV_MAX_FAILURES_EXPLAIN') }}</span></dt>
+			<dd><input type="number" id="hv_max_failures" name="hv_max_failures" min="0" value="{{ HV_MAX_FAILURES }}" style="width: 6em;"></dd>
+		</dl>
+		<dl>
+			<dt><label for="hv_lock_minutes">{{ lang('ACP_HV_LOCK_MINUTES') ~ lang('COLON') }}</label><br><span>{{ lang('ACP_HV_LOCK_MINUTES_EXPLAIN') }}</span></dt>
+			<dd><input type="number" id="hv_lock_minutes" name="hv_lock_minutes" min="1" value="{{ HV_LOCK_MINUTES }}" style="width: 6em;"> {{ lang('ACP_HV_MINUTES') }}</dd>
+		</dl>
+	</fieldset>
+
+	<fieldset class="submit-buttons">
+		<input class="button1" type="submit" id="submit" name="submit" value="{{ lang('SUBMIT') }}">&nbsp;
+		<input class="button2" type="reset" id="reset" name="reset" value="{{ lang('RESET') }}">
+		{{ S_FORM_TOKEN }}
+	</fieldset>
+
+	<fieldset>
+		<legend>{{ lang('ACP_HV_RESET_PASSES') }}</legend>
+		<dl>
+			<dt><label>{{ lang('ACP_HV_RESET_PASSES') ~ lang('COLON') }}</label><br><span>{{ lang('ACP_HV_RESET_PASSES_EXPLAIN') }}</span></dt>
+			<dd><input type="submit" class="button2" name="hv_reset_passes" value="{{ lang('ACP_HV_RESET_PASSES_BUTTON') }}"></dd>
+		</dl>
+	</fieldset>
+</form>
+
+<script>
+(function () {
+	var picker = document.getElementById('hv_accent_picker');
+	var accent = document.getElementById('hv_accent_color');
+	picker.addEventListener('input', function () { accent.value = picker.value; });
+	document.getElementById('hv_accent_reset').addEventListener('click', function () {
+		var def = this.getAttribute('data-hv-default');
+		accent.value = def;
+		picker.value = def;
+	});
+	accent.addEventListener('input', function () {
+		// niente quantificatori tra graffe: phpBB li scambierebbe per variabili di template
+		if (accent.value.length === 7 && /^#[0-9a-f]+$/i.test(accent.value)) { picker.value = accent.value; }
+	});
+
+	var input = document.getElementById('hv_validity_hours');
+	Array.prototype.forEach.call(document.querySelectorAll('[data-hv-hours]'), function (btn) {
+		btn.addEventListener('click', function () {
+			input.value = btn.getAttribute('data-hv-hours');
+		});
+	});
+})();
+</script>
+
+{% include 'acp_humanverify_footer.html' %}
+
+{% include 'overall_footer.html' %}

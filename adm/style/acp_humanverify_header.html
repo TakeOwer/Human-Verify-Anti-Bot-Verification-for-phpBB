@@ -1,0 +1,51 @@
+<style>
+.hv-acp-title { margin-bottom: 4px; }
+.hv-badges { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 16px; }
+.hv-badge { display: inline-flex; border-radius: 3px; overflow: hidden; font-size: 11px; line-height: 20px; border: 1px solid #c6ccd6; }
+.hv-badge b { padding: 0 7px; background: #4a5568; color: #fff; font-weight: 600; }
+.hv-badge span { padding: 0 7px; background: #f3f5f8; color: #1f2937; }
+.hv-badge.hv-on span { background: #d9f2e4; color: #14532d; }
+.hv-badge.hv-off span { background: #fde2e1; color: #7f1d1d; }
+.hv-credits { margin-top: 18px; padding-top: 8px; border-top: 1px solid #d5dae1; text-align: center; font-size: 11px; color: #6b7280; }
+.hv-modes { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 8px; max-width: 980px; }
+dd label.hv-mode-card, .hv-mode-card { display: flex; flex-direction: column; box-sizing: border-box; min-width: 0; margin: 0; padding: 8px 10px; border: 1px solid #c6ccd6; border-radius: 4px; background: #fff; cursor: pointer; white-space: normal; overflow: hidden; }
+.hv-mode-head { display: flex; align-items: center; gap: 6px; white-space: normal; }
+.hv-mode-card input { margin: 0; flex: none; }
+.hv-mode-card strong { font-size: 1.05em; }
+.hv-mode-card small { display: block; margin-top: 5px; color: #4b5563; line-height: 1.45; white-space: normal; overflow-wrap: anywhere; word-break: normal; }
+.hv-mode-card:has(input:checked) { border-color: #1d6fa5; box-shadow: inset 0 0 0 1px #1d6fa5; background: #f0f7fc; }
+.hv-mode-card:has(input:disabled) { opacity: .55; cursor: not-allowed; }
+.hv-preview-links { margin-top: 10px; }
+.hv-preview-links span { color: #4b5563; font-size: .95em; }
+.hv-presets { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 4px; }
+.hv-presets .button2 { padding: 2px 8px; }
+.hv-stats { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.hv-stat { min-width: 110px; padding: 6px 10px; border: 1px solid #d5dae1; border-radius: 4px; background: #fff; }
+.hv-stat strong { display: block; font-size: 1.5em; }
+.hv-result { display: inline-block; padding: 0 6px; border-radius: 3px; font-size: 11px; line-height: 18px; background: #eef1f5; }
+.hv-result-passed { background: #d9f2e4; color: #14532d; }
+.hv-result-failed { background: #fff1d6; color: #7c4a03; }
+.hv-result-blocked { background: #fde2e1; color: #7f1d1d; }
+.hv-locked { display: inline-block; margin-left: 4px; padding: 0 5px; border-radius: 3px; background: #7f1d1d; color: #fff; font-size: 10px; line-height: 16px; }
+.hv-ua { max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; color: #4b5563; }
+.hv-progress { height: 22px; margin: 10px 0; border-radius: 4px; background: #e5e9ef; overflow: hidden; position: relative; }
+.hv-progress-bar { height: 100%; width: 0; background: #1d6fa5; transition: width .25s; }
+.hv-progress-label { position: absolute; inset: 0; text-align: center; line-height: 22px; font-weight: 600; color: #111827; }
+.hv-tests td { vertical-align: top; }
+.hv-test-status { display: inline-block; min-width: 70px; text-align: center; padding: 0 6px; border-radius: 3px; font-size: 11px; line-height: 18px; background: #eef1f5; color: #374151; }
+.hv-test-ok { background: #d9f2e4; color: #14532d; }
+.hv-test-warn { background: #fff1d6; color: #7c4a03; }
+.hv-test-error { background: #fde2e1; color: #7f1d1d; }
+.hv-test-running { background: #dbeafe; color: #1e3a8a; }
+.hv-summary { margin-top: 8px; font-weight: 600; }
+</style>
+
+<h1 class="hv-acp-title">{{ lang('ACP_HUMANVERIFY_TITLE') }}</h1>
+<div class="hv-badges">
+	<span class="hv-badge"><b>{{ lang('ACP_HV_BADGE_EXT') }}</b><span>{{ HV_EXT_VERSION }}</span></span>
+	<span class="hv-badge"><b>{{ lang('ACP_HV_BADGE_PHP') }}</b><span>{{ HV_PHP_VERSION }}</span></span>
+	<span class="hv-badge"><b>{{ lang('ACP_HV_BADGE_PHPBB') }}</b><span>{{ HV_PHPBB_VERSION }}</span></span>
+	<span class="hv-badge"><b>{{ lang('ACP_HV_BADGE_LICENSE') }}</b><span>GPL-2.0</span></span>
+	<span class="hv-badge {% if S_HV_ENABLED %}hv-on{% else %}hv-off{% endif %}"><b>{{ lang('ACP_HV_BADGE_STATUS') }}</b><span>{% if S_HV_ENABLED %}{{ lang('ACP_HV_STATUS_ON') }}{% else %}{{ lang('ACP_HV_STATUS_OFF') }}{% endif %}</span></span>
+	<span class="hv-badge"><b>{{ lang('ACP_HV_BADGE_MODE') }}</b><span>{{ HV_MODE_NAME }}</span></span>
+</div>

@@ -1,0 +1,108 @@
+{% include 'overall_header.html' %}
+
+{% include 'acp_humanverify_header.html' %}
+
+<p>{{ lang('ACP_HV_LOG_EXPLAIN', HV_RETENTION) }}</p>
+
+{% if not S_HV_LOG_ENABLED %}
+<div class="errorbox"><p>{{ lang('ACP_HV_LOG_DISABLED_NOTICE') }}</p></div>
+{% endif %}
+
+<div class="hv-stats">
+	<div class="hv-stat"><strong>{{ HV_STAT_IPS }}</strong>{{ lang('ACP_HV_STAT_IPS') }}</div>
+	<div class="hv-stat"><strong>{{ HV_STAT_CHALLENGED }}</strong>{{ lang('ACP_HV_STAT_CHALLENGED') }}</div>
+	<div class="hv-stat"><strong>{{ HV_STAT_PASSED }}</strong>{{ lang('ACP_HV_STAT_PASSED') }}</div>
+	<div class="hv-stat"><strong>{{ HV_STAT_FAILED }}</strong>{{ lang('ACP_HV_STAT_FAILED') }}</div>
+	<div class="hv-stat"><strong>{{ HV_STAT_BLOCKED }}</strong>{{ lang('ACP_HV_STAT_BLOCKED') }}</div>
+</div>
+
+<form id="hv_log_search" method="post" action="{{ U_SEARCH }}">
+	<fieldset class="quick" style="float: none; text-align: left;">
+		<label for="hv_search">{{ lang('ACP_HV_SEARCH_IP') ~ lang('COLON') }}</label>
+		<input type="text" id="hv_search" name="hv_search" value="{{ HV_SEARCH }}" size="22">
+		<label for="hv_filter">{{ lang('ACP_HV_FILTER') ~ lang('COLON') }}</label>
+		<select id="hv_filter" name="hv_filter">
+			{% for f in hv_filters %}
+			<option value="{{ f.VALUE }}"{% if f.S_SELECTED %} selected="selected"{% endif %}>{{ f.TITLE }}</option>
+			{% endfor %}
+		</select>
+		<input type="submit" class="button2" value="{{ lang('ACP_HV_SEARCH_BUTTON') }}">
+	</fieldset>
+</form>
+
+<form id="hv_log_form" method="post" action="{{ U_ACTION }}">
+
+	{% if pagination %}
+	<div class="pagination top-pagination">
+		{% include 'pagination.html' %}
+	</div>
+	{% endif %}
+
+	<table class="table1 zebra-table">
+		<thead>
+		<tr>
+			<th style="width: 1%;"></th>
+			<th><a href="{{ U_SORT_LOG_IP }}">{{ lang('ACP_HV_COL_IP') }}</a></th>
+			<th><a href="{{ U_SORT_LAST_SEEN }}">{{ lang('ACP_HV_COL_LAST_SEEN') }}</a></th>
+			<th class="centered"><a href="{{ U_SORT_COUNT_CHALLENGED }}">{{ lang('ACP_HV_COL_CHALLENGED') }}</a></th>
+			<th class="centered"><a href="{{ U_SORT_COUNT_PASSED }}">{{ lang('ACP_HV_COL_PASSED') }}</a></th>
+			<th class="centered"><a href="{{ U_SORT_COUNT_FAILED }}">{{ lang('ACP_HV_COL_FAILED') }}</a></th>
+			<th class="centered"><a href="{{ U_SORT_COUNT_BLOCKED }}">{{ lang('ACP_HV_COL_BLOCKED') }}</a></th>
+			<th>{{ lang('ACP_HV_COL_RESULT') }}</th>
+			<th>{{ lang('ACP_HV_COL_UA') }}</th>
+			<th class="centered">{{ lang('ACTION') }}</th>
+		</tr>
+		</thead>
+		<tbody>
+		{% for row in hv_log %}
+		<tr>
+			<td><input type="checkbox" class="radio" name="mark[]" value="{{ row.ID }}"></td>
+			<td>
+				<strong><a href="{{ row.U_WHOIS }}" target="_blank" rel="noopener noreferrer" title="{{ lang('ACP_HV_WHOIS') }}">{{ row.IP }}</a></strong>
+				{% if row.S_LOCKED %}<span class="hv-locked">{{ lang('ACP_HV_LOCKED') }}</span>{% endif %}
+				<br><span class="small">{{ lang('ACP_HV_FIRST_SEEN') ~ lang('COLON') }} {{ row.FIRST_SEEN }}</span>
+			</td>
+			<td>{{ row.LAST_SEEN }}</td>
+			<td class="centered">{{ row.CHALLENGED }}</td>
+			<td class="centered">{{ row.PASSED }}</td>
+			<td class="centered">{{ row.FAILED }}</td>
+			<td class="centered">{{ row.BLOCKED }}</td>
+			<td>
+				<span class="hv-result hv-result-{{ row.RESULT }}">{{ row.RESULT_NAME }}</span>
+				{% if row.MODE_NAME %}<br><span class="small">{{ row.MODE_NAME }}</span>{% endif %}
+			</td>
+			<td><div class="hv-ua" title="{{ row.UA }}">{{ row.UA }}</div></td>
+			<td class="centered"><a href="{{ row.U_DELETE }}" title="{{ lang('ACP_HV_DELETE_IP') }}">{{ lang('DELETE') }}</a></td>
+		</tr>
+		{% else %}
+		<tr>
+			<td colspan="10" class="centered">{{ lang('ACP_HV_LOG_EMPTY') }}</td>
+		</tr>
+		{% endfor %}
+		</tbody>
+	</table>
+
+	{% if pagination %}
+	<div class="pagination">
+		{% include 'pagination.html' %}
+	</div>
+	{% endif %}
+
+	{% if hv_log %}
+	<p class="small">
+		<a href="#" onclick="marklist('hv_log_form', 'mark', true); return false;">{{ lang('MARK_ALL') }}</a> &bull;
+		<a href="#" onclick="marklist('hv_log_form', 'mark', false); return false;">{{ lang('UNMARK_ALL') }}</a>
+	</p>
+	{% endif %}
+
+	<fieldset class="quick">
+		<input class="button2" type="submit" name="hv_delete_marked" value="{{ lang('ACP_HV_DELETE_MARKED') }}">
+		<input class="button2" type="submit" name="hv_unlock_marked" value="{{ lang('ACP_HV_UNLOCK_MARKED') }}">
+		<input class="button1" type="submit" name="hv_delete_all" value="{{ lang('ACP_HV_DELETE_ALL') }}">
+		{{ S_FORM_TOKEN }}
+	</fieldset>
+</form>
+
+{% include 'acp_humanverify_footer.html' %}
+
+{% include 'overall_footer.html' %}

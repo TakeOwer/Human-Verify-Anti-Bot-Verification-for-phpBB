@@ -1,0 +1,302 @@
+{% include 'overall_header.html' %}
+
+{% include 'acp_humanverify_header.html' %}
+
+<p>{{ lang('ACP_HV_CHECKUP_EXPLAIN') }}</p>
+
+<fieldset>
+	<legend>{{ lang('ACP_HUMANVERIFY_CHECKUP') }}</legend>
+
+	<p><input type="button" class="button1" id="hv_run" value="{{ lang('ACP_HV_RUN_CHECKUP') }}"></p>
+
+	<div class="hv-progress" aria-hidden="true">
+		<div class="hv-progress-bar" id="hv_bar"></div>
+		<div class="hv-progress-label" id="hv_bar_label">0%</div>
+	</div>
+
+	<table class="table1 hv-tests">
+		<thead>
+		<tr>
+			<th style="width: 28%;">{{ lang('ACP_HV_TEST') }}</th>
+			<th style="width: 10%;" class="centered">{{ lang('ACP_HV_TEST_RESULT') }}</th>
+			<th>{{ lang('ACP_HV_TEST_DETAILS') }}</th>
+		</tr>
+		</thead>
+		<tbody id="hv_tests_body"></tbody>
+	</table>
+
+	<p class="hv-summary" id="hv_summary" role="status" aria-live="polite"></p>
+</fieldset>
+
+<script>
+(function () {
+	var tests = {{ HV_TESTS_JSON }};
+	var url = '{{ U_HV_TEST|e('js') }}';
+	var L = {
+		waiting: '{{ lang('ACP_HV_TEST_WAITING')|e('js') }}',
+		running: '{{ lang('ACP_HV_TEST_RUNNING')|e('js') }}',
+		ok: '{{ lang('ACP_HV_TEST_OK')|e('js') }}',
+		warn: '{{ lang('ACP_HV_TEST_WARN')|e('js') }}',
+		error: '{{ lang('ACP_HV_TEST_ERROR')|e('js') }}',
+		failed: '{{ lang('ACP_HV_TEST_REQUEST_FAILED')|e('js') }}',
+		summary: '{{ lang('ACP_HV_CHECKUP_SUMMARY')|e('js') }}'
+	};
+
+	var body = document.getElementById('hv_tests_body');
+	var bar = document.getElementById('hv_bar');
+	var label = document.getElementById('hv_bar_label');
+	var summary = document.getElementById('hv_summary');
+	var button = document.getElementById('hv_run');
+	var rows = {};
+
+	function setStatus(key, status, message) {
+		var cell = rows[key];
+		cell.status.className = 'hv-test-status hv-test-' + status;
+		cell.status.textContent = L[status] || status;
+		if (message !== undefined) {
+			cell.details.textContent = message;
+		}
+	}
+
+	function build() {
+		body.innerHTML = '';
+		tests.forEach(function (test) {
+			var tr = document.createElement('tr');
+			var name = document.createElement('td');
+			var status = document.createElement('td');
+			var details = document.createElement('td');
+			var badge = document.createElement('span');
+			name.textContent = test.title;
+			status.className = 'centered';
+			status.appendChild(badge);
+			tr.appendChild(name);
+			tr.appendChild(status);
+			tr.appendChild(details);
+			body.appendChild(tr);
+			rows[test.key] = { status: badge, details: details };
+			setStatus(test.key, 'waiting', '');
+		});
+	}
+
+	function progress(done) {
+		var pct = Math.round(done / tests.length * 100);
+		bar.style.width = pct + '%';
+		label.textContent = pct + '%';
+	}
+
+	function run() {
+		var i = 0;
+		var count = { ok: 0, warn: 0, error: 0 };
+
+		button.disabled = true;
+		summary.textContent = '';
+		build();
+		progress(0);
+
+		function next() {
+			if (i >= tests.length) {
+				button.disabled = false;
+				summary.textContent = L.summary.replace('%1$d', count.ok).replace('%2$d', count.warn).replace('%3$d', count.error);
+				return;
+			}
+
+			var test = tests[i];
+			setStatus(test.key, 'running');
+
+			fetch(url + '&test=' + encodeURIComponent(test.key), {
+				credentials: 'same-origin',
+				headers: { 'X-Requested-With': 'XMLHttpRequest' }
+			}).then(function (r) {
+				return r.json();
+			}).then(function (res) {
+				var status = (res && res.status) || 'error';
+				count[status] = (count[status] || 0) + 1;
+				setStatus(test.key, status, res.message || '');
+			}).catch(function () {
+				count.error++;
+				setStatus(test.key, 'error', L.failed);
+			}).then(function () {
+				i++;
+				progress(i);
+				next();
+			});
+		}
+
+		next();
+	}
+
+	build();
+	button.addEventListener('click', run);
+})();
+</script>
+
+<fieldset>
+	<legend>{{ lang('ACP_HV_CRON_TOOLS') }}</legend>
+	<p>{{ lang('ACP_HV_CRON_TOOLS_EXPLAIN') }}</p>
+
+	<dl>
+		<dt><label>{{ lang('ACP_HV_RUN_PRUNE') ~ lang('COLON') }}</label><br><span>{{ lang('ACP_HV_RUN_PRUNE_EXPLAIN') }} <strong id="hv_prune_last">{{ HV_PRUNE_LAST }}</strong></span></dt>
+		<dd>
+			<input type="button" class="button2" id="hv_prune_run" value="{{ lang('ACP_HV_RUN_PRUNE_BUTTON') }}">
+			<span id="hv_prune_result" class="hv-test-status" hidden></span>
+			<span id="hv_prune_message"></span>
+		</dd>
+	</dl>
+	<dl>
+		<dt><label>{{ lang('ACP_HV_RUN_CRON') ~ lang('COLON') }}</label><br><span>{{ lang('ACP_HV_RUN_CRON_EXPLAIN') }}</span></dt>
+		<dd><input type="button" class="button2" id="hv_cron_run" value="{{ lang('ACP_HV_RUN_CRON_BUTTON') }}"></dd>
+	</dl>
+
+	<div id="hv_cron_area" hidden>
+		<div class="hv-progress" aria-hidden="true">
+			<div class="hv-progress-bar" id="hv_cron_bar"></div>
+			<div class="hv-progress-label" id="hv_cron_label">0%</div>
+		</div>
+		<table class="table1 hv-tests">
+			<thead>
+			<tr>
+				<th style="width: 40%;">{{ lang('ACP_HV_CRON_TASK') }}</th>
+				<th style="width: 10%;" class="centered">{{ lang('ACP_HV_TEST_RESULT') }}</th>
+				<th>{{ lang('ACP_HV_TEST_DETAILS') }}</th>
+			</tr>
+			</thead>
+			<tbody id="hv_cron_body"></tbody>
+		</table>
+		<p class="hv-summary" id="hv_cron_summary" role="status" aria-live="polite"></p>
+	</div>
+</fieldset>
+
+<script>
+(function () {
+	var L = {
+		waiting: '{{ lang('ACP_HV_TEST_WAITING')|e('js') }}',
+		running: '{{ lang('ACP_HV_TEST_RUNNING')|e('js') }}',
+		ok: '{{ lang('ACP_HV_TEST_OK')|e('js') }}',
+		warn: '{{ lang('ACP_HV_TEST_WARN')|e('js') }}',
+		error: '{{ lang('ACP_HV_TEST_ERROR')|e('js') }}',
+		failed: '{{ lang('ACP_HV_TEST_REQUEST_FAILED')|e('js') }}',
+		none: '{{ lang('ACP_HV_CRON_NONE_READY')|e('js') }}',
+		summary: '{{ lang('ACP_HV_CRON_SUMMARY')|e('js') }}'
+	};
+	var urls = {
+		prune: '{{ U_HV_PRUNE|e('js') }}',
+		list: '{{ U_HV_CRON_LIST|e('js') }}',
+		run: '{{ U_HV_CRON_RUN|e('js') }}'
+	};
+
+	function call(url) {
+		return fetch(url, { credentials: 'same-origin', headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+			.then(function (r) { return r.json(); });
+	}
+
+	function badge(el, status) {
+		el.hidden = false;
+		el.className = 'hv-test-status hv-test-' + status;
+		el.textContent = L[status] || status;
+	}
+
+	/* Pulizia di Human Verify */
+	var pruneBtn = document.getElementById('hv_prune_run');
+	var pruneBadge = document.getElementById('hv_prune_result');
+	var pruneMsg = document.getElementById('hv_prune_message');
+
+	pruneBtn.addEventListener('click', function () {
+		pruneBtn.disabled = true;
+		badge(pruneBadge, 'running');
+		pruneMsg.textContent = '';
+		call(urls.prune).then(function (res) {
+			badge(pruneBadge, res.status || 'error');
+			pruneMsg.textContent = res.message || '';
+			if (res.last) {
+				document.getElementById('hv_prune_last').textContent = res.last;
+			}
+		}).catch(function () {
+			badge(pruneBadge, 'error');
+			pruneMsg.textContent = L.failed;
+		}).then(function () {
+			pruneBtn.disabled = false;
+		});
+	});
+
+	/* Tutte le attività cron pronte, una alla volta */
+	var cronBtn = document.getElementById('hv_cron_run');
+	var area = document.getElementById('hv_cron_area');
+	var body = document.getElementById('hv_cron_body');
+	var bar = document.getElementById('hv_cron_bar');
+	var label = document.getElementById('hv_cron_label');
+	var summary = document.getElementById('hv_cron_summary');
+
+	function progress(done, total) {
+		var pct = total ? Math.round(done / total * 100) : 100;
+		bar.style.width = pct + '%';
+		label.textContent = pct + '%';
+	}
+
+	cronBtn.addEventListener('click', function () {
+		cronBtn.disabled = true;
+		area.hidden = false;
+		body.innerHTML = '';
+		summary.textContent = '';
+		progress(0, 1);
+
+		call(urls.list).then(function (res) {
+			var tasks = (res && res.tasks) || [];
+			var rows = [];
+			var count = { ok: 0, warn: 0, error: 0 };
+
+			if (!tasks.length) {
+				progress(1, 1);
+				summary.textContent = L.none;
+				cronBtn.disabled = false;
+				return;
+			}
+
+			tasks.forEach(function (name) {
+				var tr = document.createElement('tr');
+				var tdName = document.createElement('td');
+				var tdStatus = document.createElement('td');
+				var tdMsg = document.createElement('td');
+				var b = document.createElement('span');
+				tdName.textContent = name;
+				tdStatus.className = 'centered';
+				tdStatus.appendChild(b);
+				tr.appendChild(tdName); tr.appendChild(tdStatus); tr.appendChild(tdMsg);
+				body.appendChild(tr);
+				badge(b, 'waiting');
+				rows.push({ badge: b, msg: tdMsg });
+			});
+
+			var i = 0;
+			(function next() {
+				if (i >= tasks.length) {
+					summary.textContent = L.summary.replace('%1$d', count.ok).replace('%2$d', count.warn).replace('%3$d', count.error);
+					cronBtn.disabled = false;
+					return;
+				}
+				badge(rows[i].badge, 'running');
+				call(urls.run + '&task=' + encodeURIComponent(tasks[i])).then(function (r) {
+					var st = (r && r.status) || 'error';
+					count[st] = (count[st] || 0) + 1;
+					badge(rows[i].badge, st);
+					rows[i].msg.textContent = (r && r.message) || '';
+				}).catch(function () {
+					count.error++;
+					badge(rows[i].badge, 'error');
+					rows[i].msg.textContent = L.failed;
+				}).then(function () {
+					i++;
+					progress(i, tasks.length);
+					next();
+				});
+			})();
+		}).catch(function () {
+			summary.textContent = L.failed;
+			cronBtn.disabled = false;
+		});
+	});
+})();
+</script>
+
+{% include 'acp_humanverify_footer.html' %}
+
+{% include 'overall_footer.html' %}

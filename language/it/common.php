@@ -1,0 +1,180 @@
+<?php
+/**
+ *
+ * Human Verify. An extension for the phpBB Forum Software package.
+ * [Italiano]
+ *
+ * @copyright (c) 2026, Salvo Cortesiano, https://www.netshadows.de/ombra
+ * @license GNU General Public License, version 2 (GPL-2.0)
+ *
+ */
+
+if (!defined('IN_PHPBB'))
+{
+	exit;
+}
+
+if (empty($lang) || !is_array($lang))
+{
+	$lang = [];
+}
+
+$lang = array_merge($lang, [
+	// Pagina di verifica
+	'HV_PAGE_TITLE'			=> 'Verifica di sicurezza',
+	'HV_LEAD_AUTO'			=> 'Il tuo browser sta superando una breve verifica automatica. Entrerai nel forum fra pochi istanti.',
+	'HV_LEAD_CHECKBOX'		=> 'Spunta la casella qui sotto per entrare nel forum.',
+	'HV_LEAD_CAPTCHA'		=> 'Trascrivi i caratteri dell’immagine qui sotto per entrare nel forum.',
+	'HV_LEAD_PUZZLE'		=> 'Rimetti in ordine i tasselli qui sotto per entrare nel forum.',
+	'HV_STATUS_AUTO'		=> 'Verifica in corso…',
+	'HV_STATUS_CHECKBOX'	=> 'In attesa della conferma',
+	'HV_STATUS_CAPTCHA'		=> 'In attesa del codice',
+	'HV_STATUS_PUZZLE'		=> 'In attesa del puzzle',
+	'HV_CHECKBOX_LABEL'		=> 'Verifica di essere umano',
+	'HV_BRAND'				=> 'Human Verify',
+	'HV_CAPTCHA_ALT'		=> 'Codice di verifica da trascrivere',
+	'HV_CAPTCHA_LABEL'		=> 'Codice (%d caratteri, maiuscole o minuscole)',
+	'HV_NEW_CHALLENGE'		=> 'Cambia immagine',
+	'HV_VERIFY_BUTTON'		=> 'Verifica',
+	'HV_PUZZLE_HELP'		=> 'Trascina un tassello sopra un altro per scambiarli, oppure tocca due tasselli uno dopo l’altro. Quando l’immagine è completa premi Verifica.',
+	'HV_PUZZLE_LABEL'		=> 'Tasselli del puzzle',
+	'HV_PREVIEW'			=> 'Immagine completa',
+	'HV_PREVIEW_ALT'		=> 'Anteprima dell’immagine da ricomporre',
+	'HV_NOSCRIPT'			=> 'Per entrare devi attivare JavaScript nel browser e ricaricare la pagina.',
+	'HV_REVEAL_IP'			=> 'mostra',
+	'HV_ADMIN_PREVIEW_NOTICE'	=> 'Anteprima per l’amministratore: nessun visitatore vede questa pagina in questo momento.',
+	'HV_TITLE_AUTO'			=> 'Un attimo, stiamo controllando la connessione',
+	'HV_TITLE_CHECKBOX'		=> 'Confermi di essere una persona?',
+	'HV_TITLE_CAPTCHA'		=> 'Scrivi il codice per entrare',
+	'HV_TITLE_PUZZLE'		=> 'Ricomponi l’immagine per entrare',
+	'HV_WHAT'				=> 'Perché vedo questa pagina',
+	'HV_WHAT_TEXT'			=> '%s controlla i visitatori prima di farli entrare, per proteggere il forum da bot e programmi che ne copiano i contenuti. La verifica si fa una volta sola e poi non la vedrai per un po’.',
+	'HV_WHAT_HAPPENED'		=> 'Che cosa è successo',
+	'HV_FACT_REF'			=> 'ID richiesta',
+	'HV_FACT_IP'			=> 'Il tuo IP',
+	'HV_FACT_WHEN'			=> 'Data e ora',
+	'HV_COOKIE_NOTICE'		=> 'Superata la verifica, il forum salva solo un cookie tecnico che la ricorda. Nessun dato viene inviato a servizi esterni.',
+	'HV_CONTACT_ADMIN'		=> 'Scrivi all’amministratore',
+
+	// Testi usati dal JavaScript
+	'HV_JS_SOLVING'			=> 'Verifica del browser in corso…',
+	'HV_JS_CHECKING'		=> 'Controllo della risposta…',
+	'HV_JS_NETWORK'			=> 'Il server non ha risposto. Nuovo tentativo tra poco.',
+	'HV_JS_EMPTY_ANSWER'	=> 'Scrivi il codice dell’immagine.',
+	'HV_JS_IMAGE_ERROR'		=> 'Immagine non caricata. Premi “Cambia immagine”.',
+	'HV_JS_TILE'			=> 'Tassello %d',
+	'HV_JS_TILE_SELECTED'	=> 'Tassello selezionato: ora scegli quello con cui scambiarlo.',
+	'HV_JS_TILES_SWAPPED'	=> 'Tasselli scambiati.',
+	'HV_JS_RELOADING'		=> 'Carico una nuova verifica…',
+
+	// Esito
+	'HV_SUCCESS'			=> 'Verifica riuscita. Accesso in corso…',
+	'HV_ERR_METHOD'			=> 'Richiesta non valida.',
+	'HV_ERR_EXPIRED'		=> 'La verifica è scaduta.',
+	'HV_ERR_USED'			=> 'Questa verifica è già stata usata.',
+	'HV_ERR_POW'			=> 'Il controllo del browser non è riuscito.',
+	'HV_ERR_TOO_FAST'		=> 'Risposta troppo veloce per essere di una persona.',
+	'HV_ERR_CLICK'			=> 'Devi spuntare la casella.',
+	'HV_ERR_CAPTCHA'		=> 'Il codice non è corretto.',
+	'HV_ERR_PUZZLE'			=> 'L’immagine non è ricomposta correttamente.',
+
+	// Pagina di blocco
+	'HV_BLOCKED_TITLE'		=> 'Accesso negato',
+	'HV_BLOCKED_LEAD'		=> 'L’accesso al forum è stato negato.',
+	'HV_BLOCKED_NOTE'		=> 'Se pensi che si tratti di un errore, contatta l’amministratore del forum indicando l’ID richiesta qui sotto.',
+	'HV_BLOCKED_EMPTY_UA'	=> 'Il browser non si è identificato.',
+	'HV_BLOCKED_BAD_AGENT'	=> 'Programma automatico non ammesso.',
+	'HV_BLOCKED_FAKE_ENGINE'	=> 'Motore di ricerca non autentico.',
+	'HV_BLOCKED_LOCKED'		=> 'Troppe verifiche fallite. Riprova tra %d minuti.',
+
+	// Tipi di verifica
+	'HV_MODE_AUTO'				=> 'Automatica',
+	'HV_MODE_AUTO_EXPLAIN'		=> 'Il browser risolve un calcolo in background e il visitatore entra da solo, senza fare nulla.',
+	'HV_MODE_CHECKBOX'			=> 'Casella da cliccare',
+	'HV_MODE_CHECKBOX_EXPLAIN'	=> 'Calcolo in background più la casella “Verifica di essere umano” da spuntare.',
+	'HV_MODE_CAPTCHA'			=> 'Captcha',
+	'HV_MODE_CAPTCHA_EXPLAIN'	=> 'Calcolo in background più un codice da trascrivere da un’immagine distorta. Richiede GD.',
+	'HV_MODE_PUZZLE'			=> 'Puzzle di immagini',
+	'HV_MODE_PUZZLE_EXPLAIN'	=> 'Calcolo in background più un’immagine casuale divisa in tasselli da rimettere in ordine trascinandoli. Richiede GD.',
+
+	// Check-up: nomi dei test
+	'HV_TEST_PHP'			=> 'Versione PHP',
+	'HV_TEST_PHPBB'			=> 'Versione phpBB',
+	'HV_TEST_CONFIG'		=> 'Configurazione',
+	'HV_TEST_CRYPTO'		=> 'Funzioni crittografiche',
+	'HV_TEST_TOKEN'			=> 'Firma dei token e cookie',
+	'HV_TEST_POW'			=> 'Calcolo proof-of-work',
+	'HV_TEST_GD'			=> 'Libreria grafica GD',
+	'HV_TEST_CAPTCHA'		=> 'Captcha',
+	'HV_TEST_PUZZLE'		=> 'Puzzle',
+	'HV_TEST_DATABASE'		=> 'Tabella registro IP',
+	'HV_TEST_CACHE'			=> 'Cache e uso singolo delle verifiche',
+	'HV_TEST_COOKIE'		=> 'Cookie',
+	'HV_TEST_FILES'			=> 'File dell’estensione',
+	'HV_TEST_LANGUAGE'		=> 'File di lingua',
+	'HV_TEST_BOTS'			=> 'Intercettazione bot e whitelist',
+	'HV_TEST_CRON'			=> 'Pulizia automatica del registro',
+
+	// Check-up: risultati
+	'HV_TEST_UNKNOWN'		=> 'Test sconosciuto.',
+	'HV_TEST_EXCEPTION'		=> 'Errore durante il test: %s',
+	'HV_TEST_PHP_OLD'		=> 'PHP %s è troppo vecchio: serve almeno PHP 7.4.',
+	'HV_TEST_PHP_OK'		=> 'PHP %s compatibile.',
+	'HV_TEST_PHPBB_OLD'		=> 'phpBB %s non è supportato: serve almeno phpBB 3.3.0.',
+	'HV_TEST_PHPBB_OK'		=> 'phpBB %s compatibile.',
+	'HV_TEST_CONFIG_MODE'	=> 'Il tipo di verifica salvato non è valido: salva di nuovo le impostazioni.',
+	'HV_TEST_CONFIG_SECRET'	=> 'La chiave segreta manca o è troppo corta: disattiva e riattiva l’estensione.',
+	'HV_TEST_CONFIG_DISABLED'	=> 'Configurazione corretta, ma la verifica è disattivata: attivala nelle impostazioni.',
+	'HV_TEST_CONFIG_SEO'	=> 'I motori di ricerca riconosciuti devono superare la verifica e non ci riusciranno: il forum potrebbe sparire dai risultati di ricerca.',
+	'HV_TEST_CONFIG_OK'		=> 'Verifica attiva, tipo: %s.',
+	'HV_TEST_CRYPTO_MISSING'	=> 'Mancano hash_hmac, sha256, random_bytes o hash_equals.',
+	'HV_TEST_CRYPTO_OK'		=> 'HMAC-SHA256 e generatore casuale sicuro disponibili.',
+	'HV_TEST_TOKEN_FAIL'	=> 'Un token firmato non è stato riletto correttamente.',
+	'HV_TEST_TOKEN_TAMPER'	=> 'Un token manomesso è stato accettato: la firma non funziona.',
+	'HV_TEST_TOKEN_PASS'	=> 'Il controllo del cookie di verifica non funziona.',
+	'HV_TEST_TOKEN_OK'		=> 'Firma, rifiuto dei token manomessi e controllo del cookie funzionano.',
+	'HV_TEST_POW_FAIL'		=> 'Il server non è riuscito a risolvere o verificare il calcolo.',
+	'HV_TEST_POW_WEAK'		=> 'Sono state accettate soluzioni sbagliate.',
+	'HV_TEST_POW_OK'		=> 'Calcolo corretto. Con la difficoltà %1$d il server impiegherebbe circa %2$d ms; un browser moderno di solito è più rapido.',
+	'HV_TEST_GD_MISSING'	=> 'GD non è disponibile: captcha e puzzle non funzionano e la verifica ripiega sulla casella.',
+	'HV_TEST_GD_OK'			=> 'GD disponibile (%s).',
+	'HV_TEST_SKIPPED_GD'	=> 'Test saltato: GD non è disponibile.',
+	'HV_TEST_IMAGE_FAIL'	=> 'L’immagine generata non è un PNG valido.',
+	'HV_TEST_CAPTCHA_FAIL'	=> 'Il controllo del codice captcha non funziona.',
+	'HV_TEST_CAPTCHA_OK'	=> 'Immagine generata (%d byte) e codice verificato correttamente.',
+	'HV_TEST_PUZZLE_FAIL'	=> 'Il controllo della soluzione del puzzle non funziona.',
+	'HV_TEST_PUZZLE_OK'		=> 'Puzzle %1$d×%1$d generato con un paesaggio casuale e soluzione verificata.',
+	'HV_TEST_PUZZLE_PHOTOS'	=> 'Puzzle %1$d×%1$d generato e verificato, con %2$d foto dalla cartella images/puzzle.',
+	'HV_TEST_DB_TABLE'		=> 'La tabella %s non esiste: disattiva e riattiva l’estensione.',
+	'HV_TEST_DB_WRITE'		=> 'Impossibile scrivere nel registro IP.',
+	'HV_TEST_DB_COUNTERS'	=> 'I contatori del registro non vengono aggiornati correttamente.',
+	'HV_TEST_DB_OK'			=> 'Tabella %1$s: scrittura, aggiornamento ed eliminazione riusciti. IP registrati: %2$d.',
+	'HV_TEST_CACHE_FAIL'	=> 'La cache di phpBB non salva i dati.',
+	'HV_TEST_CACHE_NONCE'	=> 'Una verifica potrebbe essere riusata più volte.',
+	'HV_TEST_CACHE_OK'		=> 'Cache funzionante: ogni verifica si usa una volta sola.',
+	'HV_TEST_COOKIE_NAME'	=> 'Il nome del cookie di phpBB non è impostato.',
+	'HV_TEST_COOKIE_SECURE'	=> 'Il forum è in HTTPS ma il cookie sicuro di phpBB è disattivato: il cookie %s viaggerebbe anche in HTTP. Attivalo in Impostazioni cookie.',
+	'HV_TEST_COOKIE_OK'		=> 'Il passaggio verrà salvato nel cookie %s.',
+	'HV_TEST_FILES_MISSING'	=> 'File mancanti: %s',
+	'HV_TEST_FILES_OK'		=> 'Tutti i %d file di template, stile e script sono presenti.',
+	'HV_TEST_LANG_MISSING'	=> 'File di lingua mancante: %s',
+	'HV_TEST_LANG_DIFF'		=> 'Le lingue italiana e inglese non hanno le stesse chiavi: %s',
+	'HV_TEST_LANG_OK'		=> 'Italiano e inglese completi (%d chiavi ciascuno).',
+	'HV_TEST_BOTS_WHITELIST'	=> 'Voci non valide nella whitelist IP: %s',
+	'HV_TEST_BOTS_MATCH'	=> 'Il riconoscimento degli user-agent non funziona.',
+	'HV_TEST_BOTS_DNS'		=> 'La verifica DNS è attiva ma il server non permette gethostbyaddr.',
+	'HV_TEST_BOTS_OFF'		=> 'L’intercettazione dei bot è disattivata (%d user-agent in elenco).',
+	'HV_TEST_BOTS_OK'		=> '%1$d user-agent in elenco, %2$d voci nella whitelist IP.',
+	'HV_TEST_CRON_DISABLED'	=> 'Pulizia automatica disattivata (conservazione illimitata).',
+	'HV_TEST_CRON_LATE'		=> 'L’ultima pulizia risale a %s: il compito di Human Verify non parte. Svuota la cache del forum e riprova.',
+	'HV_TEST_CRON_OK'		=> 'Ultima pulizia: %s.',
+	'HV_TEST_CRON_MISSING'	=> 'Il compito di pulizia non è registrato nel cron di phpBB: svuota la cache del forum.',
+	'HV_TEST_CRON_RAN_NOW'	=> 'Prima pulizia eseguita ora dal check-up (%s). Il cron di phpBB funziona: le prossime partiranno da sole ogni 24 ore.',
+	'HV_TEST_CRON_PHPBB_STALE'	=> 'Il cron di phpBB è fermo: l’ultimo riordino delle sessioni risale a %s. Il forum usa il cron “web”, che parte con le visite: usa il pulsante “Esegui le attività cron” qui sotto per sbloccarlo.',
+	'HV_TEST_CRON_SYSTEM_STALE'	=> 'Il cron di phpBB è fermo: l’ultimo riordino delle sessioni risale a %s. Il forum è impostato per usare il cron di sistema, ma nessun cron di sistema lo sta avviando. Su un hosting senza cron di sistema (per esempio una copia di prova su Altervista) imposta “No” in ACP › Generale › Impostazioni server › “Esegui le attività periodiche dal cron di sistema”. In alternativa aggiungi il cron di sistema oppure usa il pulsante “Esegui le attività cron” qui sotto.',
+	'HV_TEST_CRON_RAN_NOW_SHORT'	=> 'Prima pulizia eseguita ora dal check-up (%s).',
+	'HV_AGE_NEVER'			=> 'mai',
+	'HV_AGE_MINUTES'		=> '%d minuti fa',
+	'HV_AGE_HOURS'			=> '%d ore fa',
+	'HV_AGE_DAYS'			=> '%d giorni fa',
+]);

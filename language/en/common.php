@@ -1,0 +1,180 @@
+<?php
+/**
+ *
+ * Human Verify. An extension for the phpBB Forum Software package.
+ * [English]
+ *
+ * @copyright (c) 2026, Salvo Cortesiano, https://www.netshadows.de/ombra
+ * @license GNU General Public License, version 2 (GPL-2.0)
+ *
+ */
+
+if (!defined('IN_PHPBB'))
+{
+	exit;
+}
+
+if (empty($lang) || !is_array($lang))
+{
+	$lang = [];
+}
+
+$lang = array_merge($lang, [
+	// Challenge page
+	'HV_PAGE_TITLE'			=> 'Security check',
+	'HV_LEAD_AUTO'			=> 'Your browser is going through a short automatic check. You will enter the board in a moment.',
+	'HV_LEAD_CHECKBOX'		=> 'Tick the box below to enter the board.',
+	'HV_LEAD_CAPTCHA'		=> 'Type the characters from the image below to enter the board.',
+	'HV_LEAD_PUZZLE'		=> 'Put the tiles below back in order to enter the board.',
+	'HV_STATUS_AUTO'		=> 'Checking…',
+	'HV_STATUS_CHECKBOX'	=> 'Waiting for confirmation',
+	'HV_STATUS_CAPTCHA'		=> 'Waiting for the code',
+	'HV_STATUS_PUZZLE'		=> 'Waiting for the puzzle',
+	'HV_CHECKBOX_LABEL'		=> 'Verify you are human',
+	'HV_BRAND'				=> 'Human Verify',
+	'HV_CAPTCHA_ALT'		=> 'Verification code to type',
+	'HV_CAPTCHA_LABEL'		=> 'Code (%d characters, upper or lower case)',
+	'HV_NEW_CHALLENGE'		=> 'Change image',
+	'HV_VERIFY_BUTTON'		=> 'Verify',
+	'HV_PUZZLE_HELP'		=> 'Drag a tile onto another to swap them, or tap two tiles one after the other. When the picture is complete, press Verify.',
+	'HV_PUZZLE_LABEL'		=> 'Puzzle tiles',
+	'HV_PREVIEW'			=> 'Complete picture',
+	'HV_PREVIEW_ALT'		=> 'Preview of the picture to rebuild',
+	'HV_NOSCRIPT'			=> 'To enter, enable JavaScript in your browser and reload the page.',
+	'HV_REVEAL_IP'			=> 'show',
+	'HV_ADMIN_PREVIEW_NOTICE'	=> 'Administrator preview: no visitor is seeing this page right now.',
+	'HV_TITLE_AUTO'			=> 'One moment, checking your connection',
+	'HV_TITLE_CHECKBOX'		=> 'Are you a person?',
+	'HV_TITLE_CAPTCHA'		=> 'Type the code to enter',
+	'HV_TITLE_PUZZLE'		=> 'Rebuild the picture to enter',
+	'HV_WHAT'				=> 'Why am I seeing this page',
+	'HV_WHAT_TEXT'			=> '%s checks visitors before letting them in, to protect the board from bots and programs that copy its content. You only pass the check once, then you will not see it for a while.',
+	'HV_WHAT_HAPPENED'		=> 'What happened',
+	'HV_FACT_REF'			=> 'Request ID',
+	'HV_FACT_IP'			=> 'Your IP',
+	'HV_FACT_WHEN'			=> 'Date and time',
+	'HV_COOKIE_NOTICE'		=> 'Once you pass the check, the board only stores a technical cookie to remember it. No data is sent to outside services.',
+	'HV_CONTACT_ADMIN'		=> 'Write to the administrator',
+
+	// JavaScript strings
+	'HV_JS_SOLVING'			=> 'Checking your browser…',
+	'HV_JS_CHECKING'		=> 'Checking your answer…',
+	'HV_JS_NETWORK'			=> 'The server did not answer. Trying again shortly.',
+	'HV_JS_EMPTY_ANSWER'	=> 'Type the code from the image.',
+	'HV_JS_IMAGE_ERROR'		=> 'Image not loaded. Press “Change image”.',
+	'HV_JS_TILE'			=> 'Tile %d',
+	'HV_JS_TILE_SELECTED'	=> 'Tile selected: now choose the one to swap it with.',
+	'HV_JS_TILES_SWAPPED'	=> 'Tiles swapped.',
+	'HV_JS_RELOADING'		=> 'Loading a new check…',
+
+	// Result
+	'HV_SUCCESS'			=> 'Check passed. Entering…',
+	'HV_ERR_METHOD'			=> 'Invalid request.',
+	'HV_ERR_EXPIRED'		=> 'The check has expired.',
+	'HV_ERR_USED'			=> 'This check has already been used.',
+	'HV_ERR_POW'			=> 'The browser check failed.',
+	'HV_ERR_TOO_FAST'		=> 'Answer too fast to come from a person.',
+	'HV_ERR_CLICK'			=> 'You must tick the box.',
+	'HV_ERR_CAPTCHA'		=> 'The code is not correct.',
+	'HV_ERR_PUZZLE'			=> 'The picture is not put together correctly.',
+
+	// Blocked page
+	'HV_BLOCKED_TITLE'		=> 'Access denied',
+	'HV_BLOCKED_LEAD'		=> 'Access to the board has been denied.',
+	'HV_BLOCKED_NOTE'		=> 'If you think this is a mistake, contact the board administrator and include the request ID below.',
+	'HV_BLOCKED_EMPTY_UA'	=> 'Your browser did not identify itself.',
+	'HV_BLOCKED_BAD_AGENT'	=> 'Automated program not allowed.',
+	'HV_BLOCKED_FAKE_ENGINE'	=> 'Search engine not genuine.',
+	'HV_BLOCKED_LOCKED'		=> 'Too many failed checks. Try again in %d minutes.',
+
+	// Check types
+	'HV_MODE_AUTO'				=> 'Automatic',
+	'HV_MODE_AUTO_EXPLAIN'		=> 'The browser solves a calculation in the background and the visitor gets in without doing anything.',
+	'HV_MODE_CHECKBOX'			=> 'Checkbox',
+	'HV_MODE_CHECKBOX_EXPLAIN'	=> 'Background calculation plus a “Verify you are human” box to tick.',
+	'HV_MODE_CAPTCHA'			=> 'Captcha',
+	'HV_MODE_CAPTCHA_EXPLAIN'	=> 'Background calculation plus a code to type from a distorted image. Requires GD.',
+	'HV_MODE_PUZZLE'			=> 'Picture puzzle',
+	'HV_MODE_PUZZLE_EXPLAIN'	=> 'Background calculation plus a random picture split into tiles to drag back into order. Requires GD.',
+
+	// Check-up: test names
+	'HV_TEST_PHP'			=> 'PHP version',
+	'HV_TEST_PHPBB'			=> 'phpBB version',
+	'HV_TEST_CONFIG'		=> 'Configuration',
+	'HV_TEST_CRYPTO'		=> 'Cryptographic functions',
+	'HV_TEST_TOKEN'			=> 'Token signing and cookie',
+	'HV_TEST_POW'			=> 'Proof-of-work calculation',
+	'HV_TEST_GD'			=> 'GD graphics library',
+	'HV_TEST_CAPTCHA'		=> 'Captcha',
+	'HV_TEST_PUZZLE'		=> 'Puzzle',
+	'HV_TEST_DATABASE'		=> 'IP log table',
+	'HV_TEST_CACHE'			=> 'Cache and single-use checks',
+	'HV_TEST_COOKIE'		=> 'Cookie',
+	'HV_TEST_FILES'			=> 'Extension files',
+	'HV_TEST_LANGUAGE'		=> 'Language files',
+	'HV_TEST_BOTS'			=> 'Bot interception and whitelist',
+	'HV_TEST_CRON'			=> 'Automatic log cleanup',
+
+	// Check-up: results
+	'HV_TEST_UNKNOWN'		=> 'Unknown test.',
+	'HV_TEST_EXCEPTION'		=> 'Error during the test: %s',
+	'HV_TEST_PHP_OLD'		=> 'PHP %s is too old: PHP 7.4 or newer is required.',
+	'HV_TEST_PHP_OK'		=> 'PHP %s is compatible.',
+	'HV_TEST_PHPBB_OLD'		=> 'phpBB %s is not supported: phpBB 3.3.0 or newer is required.',
+	'HV_TEST_PHPBB_OK'		=> 'phpBB %s is compatible.',
+	'HV_TEST_CONFIG_MODE'	=> 'The saved check type is not valid: save the settings again.',
+	'HV_TEST_CONFIG_SECRET'	=> 'The secret key is missing or too short: disable and re-enable the extension.',
+	'HV_TEST_CONFIG_DISABLED'	=> 'Configuration is correct, but the check is turned off: turn it on in the settings.',
+	'HV_TEST_CONFIG_SEO'	=> 'Recognised search engines must pass the check and will fail: the board could drop out of search results.',
+	'HV_TEST_CONFIG_OK'		=> 'Check active, type: %s.',
+	'HV_TEST_CRYPTO_MISSING'	=> 'hash_hmac, sha256, random_bytes or hash_equals is missing.',
+	'HV_TEST_CRYPTO_OK'		=> 'HMAC-SHA256 and a secure random generator are available.',
+	'HV_TEST_TOKEN_FAIL'	=> 'A signed token was not read back correctly.',
+	'HV_TEST_TOKEN_TAMPER'	=> 'A tampered token was accepted: signing does not work.',
+	'HV_TEST_TOKEN_PASS'	=> 'The check cookie validation does not work.',
+	'HV_TEST_TOKEN_OK'		=> 'Signing, rejection of tampered tokens and cookie validation work.',
+	'HV_TEST_POW_FAIL'		=> 'The server could not solve or verify the calculation.',
+	'HV_TEST_POW_WEAK'		=> 'Wrong solutions were accepted.',
+	'HV_TEST_POW_OK'		=> 'Calculation correct. At difficulty %1$d the server would need about %2$d ms; a modern browser is usually faster.',
+	'HV_TEST_GD_MISSING'	=> 'GD is not available: captcha and puzzle do not work and the check falls back to the checkbox.',
+	'HV_TEST_GD_OK'			=> 'GD available (%s).',
+	'HV_TEST_SKIPPED_GD'	=> 'Test skipped: GD is not available.',
+	'HV_TEST_IMAGE_FAIL'	=> 'The generated image is not a valid PNG.',
+	'HV_TEST_CAPTCHA_FAIL'	=> 'The captcha code check does not work.',
+	'HV_TEST_CAPTCHA_OK'	=> 'Image generated (%d bytes) and code verified correctly.',
+	'HV_TEST_PUZZLE_FAIL'	=> 'The puzzle solution check does not work.',
+	'HV_TEST_PUZZLE_OK'		=> '%1$d×%1$d puzzle generated from a random landscape and solution verified.',
+	'HV_TEST_PUZZLE_PHOTOS'	=> '%1$d×%1$d puzzle generated and verified, with %2$d photos from the images/puzzle folder.',
+	'HV_TEST_DB_TABLE'		=> 'Table %s does not exist: disable and re-enable the extension.',
+	'HV_TEST_DB_WRITE'		=> 'Cannot write to the IP log.',
+	'HV_TEST_DB_COUNTERS'	=> 'The log counters are not updated correctly.',
+	'HV_TEST_DB_OK'			=> 'Table %1$s: write, update and delete succeeded. Logged IPs: %2$d.',
+	'HV_TEST_CACHE_FAIL'	=> 'The phpBB cache does not store data.',
+	'HV_TEST_CACHE_NONCE'	=> 'A check could be reused more than once.',
+	'HV_TEST_CACHE_OK'		=> 'Cache working: every check can be used only once.',
+	'HV_TEST_COOKIE_NAME'	=> 'The phpBB cookie name is not set.',
+	'HV_TEST_COOKIE_SECURE'	=> 'The board runs on HTTPS but the phpBB secure cookie is off: the %s cookie would also travel over HTTP. Turn it on in Cookie settings.',
+	'HV_TEST_COOKIE_OK'		=> 'Passing the check will be stored in the %s cookie.',
+	'HV_TEST_FILES_MISSING'	=> 'Missing files: %s',
+	'HV_TEST_FILES_OK'		=> 'All %d template, style and script files are present.',
+	'HV_TEST_LANG_MISSING'	=> 'Missing language file: %s',
+	'HV_TEST_LANG_DIFF'		=> 'Italian and English do not have the same keys: %s',
+	'HV_TEST_LANG_OK'		=> 'Italian and English complete (%d keys each).',
+	'HV_TEST_BOTS_WHITELIST'	=> 'Invalid entries in the IP whitelist: %s',
+	'HV_TEST_BOTS_MATCH'	=> 'User-agent matching does not work.',
+	'HV_TEST_BOTS_DNS'		=> 'DNS verification is on but the server does not allow gethostbyaddr.',
+	'HV_TEST_BOTS_OFF'		=> 'Bot interception is off (%d user-agents in the list).',
+	'HV_TEST_BOTS_OK'		=> '%1$d user-agents in the list, %2$d entries in the IP whitelist.',
+	'HV_TEST_CRON_DISABLED'	=> 'Automatic cleanup is off (unlimited retention).',
+	'HV_TEST_CRON_LATE'		=> 'The last cleanup was %s: the Human Verify task is not starting. Purge the board cache and try again.',
+	'HV_TEST_CRON_OK'		=> 'Last cleanup: %s.',
+	'HV_TEST_CRON_MISSING'	=> 'The cleanup task is not registered in the phpBB cron: purge the board cache.',
+	'HV_TEST_CRON_RAN_NOW'	=> 'First cleanup run now by the check-up (%s). The phpBB cron is working: the next ones will start by themselves every 24 hours.',
+	'HV_TEST_CRON_PHPBB_STALE'	=> 'The phpBB cron is stopped: the last session cleanup was %s. The board uses the “web” cron, which is started by visits: use the “Run cron tasks” button below to unblock it.',
+	'HV_TEST_CRON_SYSTEM_STALE'	=> 'The phpBB cron is stopped: the last session cleanup was %s. The board is set to use the system cron, but no system cron is starting it. On hosting without a system cron (for example a test copy on Altervista) set “No” in ACP › General › Server settings › “Run periodic tasks from system cron”. Otherwise add the system cron or use the “Run cron tasks” button below.',
+	'HV_TEST_CRON_RAN_NOW_SHORT'	=> 'First cleanup run now by the check-up (%s).',
+	'HV_AGE_NEVER'			=> 'never',
+	'HV_AGE_MINUTES'		=> '%d minutes ago',
+	'HV_AGE_HOURS'			=> '%d hours ago',
+	'HV_AGE_DAYS'			=> '%d days ago',
+]);

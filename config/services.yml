@@ -1,0 +1,82 @@
+services:
+    salvocortesiano.humanverify.challenge:
+        class: salvocortesiano\humanverify\core\challenge
+        arguments:
+            - '@config'
+            - '@cache.driver'
+            - '%core.root_path%'
+
+    salvocortesiano.humanverify.ip_log:
+        class: salvocortesiano\humanverify\core\ip_log
+        arguments:
+            - '@dbal.conn'
+            - '@config'
+            - '%core.table_prefix%'
+
+    salvocortesiano.humanverify.bot_detector:
+        class: salvocortesiano\humanverify\core\bot_detector
+        arguments:
+            - '@config'
+            - '@config_text'
+            - '@cache.driver'
+
+    salvocortesiano.humanverify.checkup:
+        class: salvocortesiano\humanverify\core\checkup
+        arguments:
+            - '@config'
+            - '@config_text'
+            - '@dbal.conn'
+            - '@cache.driver'
+            - '@language'
+            - '@salvocortesiano.humanverify.challenge'
+            - '@salvocortesiano.humanverify.ip_log'
+            - '@salvocortesiano.humanverify.bot_detector'
+            - '%core.root_path%'
+            - '@request'
+            - '@cron.manager'
+
+    salvocortesiano.humanverify.listener:
+        class: salvocortesiano\humanverify\event\main_listener
+        arguments:
+            - '@config'
+            - '@request'
+            - '@symfony_request'
+            - '@user'
+            - '@language'
+            - '@template'
+            - '@path_helper'
+            - '@salvocortesiano.humanverify.challenge'
+            - '@salvocortesiano.humanverify.ip_log'
+            - '@salvocortesiano.humanverify.bot_detector'
+            - '%core.php_ext%'
+            - '@auth'
+        tags:
+            - { name: event.listener }
+
+    salvocortesiano.humanverify.controller.acp:
+        class: salvocortesiano\humanverify\controller\acp_controller
+        arguments:
+            - '@config'
+            - '@config_text'
+            - '@request'
+            - '@template'
+            - '@language'
+            - '@user'
+            - '@log'
+            - '@pagination'
+            - '@ext.manager'
+            - '@salvocortesiano.humanverify.ip_log'
+            - '@salvocortesiano.humanverify.checkup'
+            - '@salvocortesiano.humanverify.bot_detector'
+            - '@cron.manager'
+            - '@cron.lock_db'
+
+    salvocortesiano.humanverify.cron.task.prune_log:
+        class: salvocortesiano\humanverify\cron\task\prune_log
+        arguments:
+            - '@config'
+            - '@salvocortesiano.humanverify.ip_log'
+        calls:
+            - [set_name, [cron.task.salvocortesiano.humanverify.prune_log]]
+        tags:
+            - { name: cron.task }
