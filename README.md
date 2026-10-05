@@ -25,7 +25,7 @@ Human Verify presents visitors with a Cloudflare-style verification page before 
 ---
 <img width="2289" height="981" alt="Screenshot 2026-10-05 095635" src="https://github.com/user-attachments/assets/ce157f2d-1005-424e-9c24-48550a436fff" />
 ---
-<img width="2297" height="1237" alt="Screenshot 2026-10-05 095652" src="https://github.com/user-attachments/assets/1404a2ea-3f2b-4994-957c-ba8d25e95d9b" />
+<img width="2297" height="1237" alt="Screenshot 2026-10-05 0956578" src="https://github.com/user-attachments/assets/60d178c1-5e2c-4029-bc51-7e2c92968467" />
 ---
 <img width="2286" height="908" alt="Screenshot 2026-10-05 095708" src="https://github.com/user-attachments/assets/640e157f-4cf6-485f-a6a0-9a59d2c59c44" />
 ---
