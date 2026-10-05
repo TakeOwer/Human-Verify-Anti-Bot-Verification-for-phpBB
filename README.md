@@ -4,7 +4,7 @@
 
 # Human Verify – Anti-Bot Verification for phpBB
 
-**Version:** 1.0.10  
+**Version:** 1.0.11
 **Author:** Salvo Cortesiano – Le Ombre della Rete 360° (info@netshadows.de)  
 **Requirements:** phpBB 3.3.0 – 3.3.x (tested up to 3.3.19), PHP 7.4 or higher (8.2 recommended), GD extension for CAPTCHA and puzzle challenges  
 **License:** GPL-2.0  
