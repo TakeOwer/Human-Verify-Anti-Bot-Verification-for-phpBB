@@ -17,7 +17,7 @@ class checkup
 {
 	const TESTS = [
 		'php', 'phpbb', 'config', 'crypto', 'token', 'pow', 'gd', 'captcha',
-		'puzzle', 'database', 'cache', 'cookie', 'files', 'language', 'bots', 'cron',
+		'puzzle', 'database', 'cache', 'cookie', 'files', 'language', 'bots', 'cron', 'callbacks',
 	];
 
 	/** @var \phpbb\config\config */
@@ -53,8 +53,16 @@ class checkup
 	/** @var \phpbb\cron\manager */
 	protected $cron_manager;
 
-	public function __construct($config, $config_text, $db, $cache, $language, $challenge, $ip_log, $bot_detector, $root_path, $request, $cron_manager)
+	/** @var exclusions */
+	protected $exclusions;
+
+	/** @var \phpbb\routing\router */
+	protected $router;
+
+	public function __construct($config, $config_text, $db, $cache, $language, $challenge, $ip_log, $bot_detector, $root_path, $request, $cron_manager, $exclusions, $router)
 	{
+		$this->exclusions = $exclusions;
+		$this->router = $router;
 		$this->request = $request;
 		$this->cron_manager = $cron_manager;
 		$this->config = $config;
@@ -379,6 +387,7 @@ class checkup
 	{
 		$base = $this->root_path . 'ext/salvocortesiano/humanverify/';
 		$files = [
+			'core/exclusions.php',
 			'styles/all/template/humanverify_challenge.html',
 			'styles/all/template/humanverify_blocked.html',
 			'styles/all/template/humanverify_art.html',
@@ -530,6 +539,56 @@ class checkup
 		}
 
 		return $this->result('ok', 'HV_TEST_CRON_OK', gmdate('Y-m-d H:i', $last) . ' UTC');
+	}
+
+	/**
+	 * Indirizzi chiamati da altri server (IPN, webhook, callback): devono essere tutti esclusi.
+	 * Se uno non lo fosse, PayPal & co. riceverebbero la pagina di verifica (come l'IPN delle donazioni).
+	 */
+	protected function test_callbacks()
+	{
+		$invalid = [];
+		foreach ($this->exclusions->parse((string) $this->config_text->get('hv_excluded_paths')) as $rule)
+		{
+			if (!$this->exclusions->is_valid_rule($rule))
+			{
+				$invalid[] = $rule;
+			}
+		}
+
+		if ($invalid)
+		{
+			return $this->result('error', 'HV_TEST_CALLBACKS_INVALID', implode(', ', $invalid));
+		}
+
+		$found = $this->exclusions->find_callback_routes($this->router->get_routes());
+		$covered = [];
+		$uncovered = [];
+
+		foreach ($found as $item)
+		{
+			$label = $item['path'] . ' (' . $item['owner'] . ')';
+			if ($item['by'] === '')
+			{
+				$uncovered[] = $label;
+			}
+			else
+			{
+				$covered[] = $label;
+			}
+		}
+
+		if ($uncovered)
+		{
+			return $this->result('error', 'HV_TEST_CALLBACKS_UNCOVERED', implode(', ', $uncovered));
+		}
+
+		if (!$found)
+		{
+			return $this->result('ok', 'HV_TEST_CALLBACKS_NONE', count($this->exclusions->get_rules()));
+		}
+
+		return $this->result('ok', 'HV_TEST_CALLBACKS_OK', count($found), implode(', ', $covered));
 	}
 
 	protected function format_age($timestamp)

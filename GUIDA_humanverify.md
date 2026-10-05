@@ -1,6 +1,6 @@
 # Human Verify – Verifica anti-bot per phpBB
 
-**Versione:** 1.0.10  
+**Versione:** 1.0.11  
 **Autore:** Salvo Cortesiano – Le Ombre della Rete 360° (info@netshadows.de)  
 **Requisiti:** phpBB 3.3.0 – 3.3.x (testata per 3.3.19), PHP 7.4 o superiore (consigliato 8.2), estensione GD per captcha e puzzle  
 **Licenza:** GPL-2.0
@@ -68,7 +68,20 @@ Se GD manca, captcha e puzzle ripiegano automaticamente sulla casella.
   Il pulsante **Ripristina l'elenco iniziale** lo riporta com'era.
 - **Lascia passare i motori di ricerca:** i bot di ACP › Generale › Bot entrano senza verifica. **Lascialo attivo**, altrimenti il forum rischia di sparire da Google.
 - **Controlla che i motori di ricerca siano autentici:** verifica con DNS inverso e diretto che Googlebot, Bingbot, Yandex, Baidu, Applebot e DuckDuckBot vengano davvero dai loro server. I falsi vengono bloccati, oppure mandati alla verifica se il blocco bot è spento. Il risultato resta in cache 24 ore per IP.
-- **IP sempre ammessi:** indirizzi singoli o intervalli CIDR, IPv4 e IPv6, che non vengono mai verificati né bloccati. Utile per il tuo IP, per servizi di monitoraggio o per il server Meilisearch.
+- **IP sempre ammessi:** indirizzi singoli o intervalli CIDR, IPv4 e IPv6, che non vengono mai verificati né bloccati. Utile per il tuo IP o per servizi di monitoraggio esterni che visitano il forum. Non serve per i servizi che il forum contatta da sé, come Meilisearch.
+
+### Pagine escluse dalla verifica
+
+Alcuni indirizzi del forum non vengono aperti da persone, ma da **altri server**. L'esempio più importante è PayPal: dopo ogni donazione avvisa l'estensione PayPal Donation (skouat/ppde) all'indirizzo `app.php/ipn-listener`, cioè l'**IPN**. Solo in quel momento la donazione viene registrata e il donatore viene promosso al gruppo dei donatori. Un server non ha un browser e non può superare la verifica: se ricevesse la pagina di verifica, la donazione andrebbe persa senza nessun errore visibile.
+
+- **Escludi automaticamente gli indirizzi di callback** (consigliato: Sì): gli indirizzi `app.php` che contengono come parola *ipn, webhook, callback, notify, listener, postback* o *hook* non ricevono mai la verifica. Vale anche per le estensioni che installerai in futuro.
+- **Percorsi esclusi:** elenco di regole, una per riga (`#` per i commenti). L'elenco iniziale contiene `/ipn-listener`, che si può ripristinare con un clic.
+  - `/percorso`: indirizzo `app.php`, vale anche per i sottopercorsi. `*` vale per qualsiasi testo, per esempio `/stripe/*/hook`.
+  - `pagina.php`: uno script del forum.
+  - `pagina.php?nome=valore`: lo script solo con quei parametri, dove il valore `*` vale per qualsiasi valore. Esempio: `memberlist.php?mode=contactadmin`.
+- **Indirizzi di callback presenti sul forum:** tabella con tutti gli indirizzi delle estensioni installate che sembrano chiamate da altri server, con l'estensione proprietaria e lo stato. Lo stato può essere *Escluso (regola …)*, *Escluso (automatico)* oppure **NON escluso**. Devono risultare tutti esclusi.
+
+**Rete di sicurezza.** Se una richiesta POST, PUT o DELETE senza pass arrivasse comunque alla verifica, la pagina risponde con il codice **403** invece di 200. Così PayPal o qualunque altro servizio capisce che l'invio non è riuscito e **lo ritenta più tardi**, invece di considerarlo consegnato. Una persona con il browser vede comunque la normale pagina di verifica.
 
 ### Captcha e puzzle
 
@@ -134,7 +147,7 @@ Gli utenti connessi, amministratore compreso, ricevono subito un pass nuovo senz
 
 ## 6. Check-up (ACP › Human Verify › Check-up)
 
-Il check-up esegue 16 test uno alla volta, con barra di avanzamento e percentuale reale, e segnala esito e dettagli di ciascuno:
+Il check-up esegue 17 test uno alla volta, con barra di avanzamento e percentuale reale, e segnala esito e dettagli di ciascuno:
 
 1. Versione PHP
 2. Versione phpBB
@@ -152,6 +165,7 @@ Il check-up esegue 16 test uno alla volta, con barra di avanzamento e percentual
 14. File di lingua italiano e inglese con le stesse chiavi
 15. Elenco bot e validità della whitelist
 16. Pulizia automatica del registro: se il cron di phpBB è fermo, indica il motivo. Distingue il forum impostato sul cron di sistema senza un cron di sistema attivo, caso tipico di una copia di prova su un hosting come Altervista, dal cron "web" che non parte. Inoltre controlla che il compito sia registrato nel cron di phpBB e che il cron giri davvero, guardando l'ultimo riordino delle sessioni. Se la pulizia non è mai partita, come subito dopo l'installazione, il check-up la esegue una volta per provarla.
+17. Indirizzi di callback (IPN, webhook): cerca tra le estensioni installate gli indirizzi chiamati da altri server e segnala con un **errore** quelli che riceverebbero la verifica. Controlla anche che le regole dei percorsi esclusi siano scritte correttamente.
 
 ### Strumenti cron (in fondo al Check-up)
 
@@ -167,7 +181,7 @@ La pagina compare **al posto della pagina richiesta**, allo stesso indirizzo e s
 
 Prima di mostrarla, l'estensione controlla queste condizioni in ordine:
 
-1. Verifica spenta, pagina esclusa (vedi sotto) o IP nella whitelist: il visitatore entra.
+1. Pagina esclusa (vedi sotto, compresi i percorsi esclusi e gli indirizzi di callback), verifica spenta o IP nella whitelist: il visitatore entra.
 2. User-agent nell'elenco dei bot, oppure user-agent vuoto: pagina "Accesso negato".
 3. Motore di ricerca riconosciuto da phpBB: entra. Se è attivo il controllo DNS e il motore risulta falso, viene bloccato.
 4. **Utente connesso** (con "Escludi gli utenti connessi" attivo): entra e riceve in silenzio il pass. Così dopo il logout, o se la sessione scade, non vede la verifica fino alla scadenza del pass.
@@ -182,6 +196,8 @@ Prima di mostrarla, l'estensione controlla queste condizioni in ordine:
 - i feed (`app.php/feed`);
 - `download/file.php` (allegati e avatar);
 - la disconnessione (`ucp.php?mode=logout`);
+- gli indirizzi di callback chiamati da altri server, come l'IPN di PayPal Donation (`app.php/ipn-listener`), con l'esclusione automatica attiva;
+- i **percorsi esclusi** scelti in ACP;
 - l'uso da riga di comando (`bin/phpbbcli.php`).
 
 I moduli inviati in **POST** e le richieste **AJAX** hanno 24 ore di tolleranza dopo la scadenza del pass. Così un visitatore ospite che scrive un messaggio lungo non perde il testo se il pass scade proprio in quel momento.
@@ -206,11 +222,12 @@ salvocortesiano/humanverify/
 │                        bot_detector.php – user-agent, whitelist, DNS motori di ricerca
 │                        ip_log.php       – registro IP
 │                        checkup.php      – test del Check-up
+│                        exclusions.php   – percorsi esclusi e indirizzi di callback
 ├── cron/task/           prune_log.php   – pulizia automatica del registro
 ├── event/               main_listener.php – intercettazione delle richieste
 ├── images/puzzle/       (facoltativa) le tue foto per il puzzle
 ├── language/it, en/     common.php, info_acp_humanverify.php
-├── migrations/          install_v100.php
+├── migrations/          install_v100.php e aggiornamenti v101 … v1011
 └── styles/all/          template e foglio di stile/script della pagina di verifica
 ```
 
@@ -222,6 +239,11 @@ salvocortesiano/humanverify/
 
 ## 12. Cronologia delle versioni
 
+- **1.0.11**
+  - Corretto: l'IPN di PayPal Donation (`app.php/ipn-listener`) riceveva la pagina di verifica, quindi le donazioni non venivano registrate e i donatori non venivano promossi.
+  - Nuova sezione *Pagine escluse dalla verifica*: esclusione automatica degli indirizzi di callback (IPN, webhook…), elenco di percorsi esclusi con `/ipn-listener` già inserito e tabella degli indirizzi di callback presenti sul forum.
+  - Rete di sicurezza: le richieste POST senza pass ricevono il codice 403, così i servizi esterni ritentano l'invio.
+  - Nuovo test del Check-up *Indirizzi di callback*.
 - **1.0.10**
   - Il pass valido viene controllato prima del blocco temporaneo: chi condivide l'IP con un bot (rete mobile, ufficio) non viene più bloccato.
   - Il contatore dei tentativi falliti riparte da zero dopo la durata del blocco, invece di bloccare di nuovo l'IP al primo errore.

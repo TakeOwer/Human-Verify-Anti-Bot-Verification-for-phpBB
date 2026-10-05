@@ -1,281 +1,6 @@
 # Human Verify – Verifica anti-bot per phpBB
 
-![Version](https://img.shields.io/badge/version-1.0.11-105080) ![phpBB](https://img.shields.io/badge/phpBB-3.3.x-377a33) ![PHP](https://img.shields.io/badge/PHP-%3E%3D7.4-377a33) ![License](https://img.shields.io/badge/license-GPL--2.0--only-7f7f7f)
-
-# Human Verify – Anti-Bot Verification for phpBB
-
-**Version:** 1.0.10  
-**Author:** Salvo Cortesiano – Le Ombre della Rete 360° (info@netshadows.de)  
-**Requirements:** phpBB 3.3.0 – 3.3.x (tested up to 3.3.19), PHP 7.4 or higher (8.2 recommended), GD extension for CAPTCHA and puzzle challenges  
-**License:** GPL-2.0  
-
-Human Verify presents visitors with a Cloudflare-style verification page before they access the board. It blocks AI scrapers and automated tools while keeping an IP address log. No external accounts, API keys, or third-party services are required—everything runs locally on your server.
-
----
-
-<img width="1302" height="1037" alt="Screenshot 2026-10-05 093433" src="https://github.com/user-attachments/assets/b206734c-1a47-4b86-bb06-d3ff04d83356" />
----
-<img width="1158" height="1084" alt="Screenshot 2026-10-05 093441" src="https://github.com/user-attachments/assets/ad993a4e-4abc-4a39-b7d7-87e389478e42" />
----
-<img width="1216" height="1105" alt="Screenshot 2026-10-05 093450" src="https://github.com/user-attachments/assets/47ffe862-f649-45e4-87be-eb8af4ce6fc7" />
----
-<img width="1114" height="1251" alt="Screenshot 2026-10-05 093511" src="https://github.com/user-attachments/assets/f1e40715-4492-4079-bb1a-5bc5b33b71cc" />
----
-<img width="2273" height="1259" alt="Screenshot 2026-10-05 095617" src="https://github.com/user-attachments/assets/8fd4e88e-b054-4b1c-8383-44af2659911e" />
----
-<img width="2289" height="981" alt="Screenshot 2026-10-05 095635" src="https://github.com/user-attachments/assets/ce157f2d-1005-424e-9c24-48550a436fff" />
----
-<img width="2297" height="1237" alt="Screenshot 2026-10-05 0956578" src="https://github.com/user-attachments/assets/60d178c1-5e2c-4029-bc51-7e2c92968467" />
----
-<img width="2286" height="908" alt="Screenshot 2026-10-05 095708" src="https://github.com/user-attachments/assets/640e157f-4cf6-485f-a6a0-9a59d2c59c44" />
----
-<img width="2284" height="410" alt="Screenshot 2026-10-05 095729" src="https://github.com/user-attachments/assets/51c02bb9-6cf4-4b03-8910-ea9342140f08" />
-
----
-
-## 1. Installation
-
-1. Copy the `salvocortesiano/humanverify` folder into the board's `ext/` directory. The final path must be `ext/salvocortesiano/humanverify/`.
-2. Navigate to **ACP › Customize › Extension management** and enable **Human Verify – Anti-bot verification**.
-3. Go to **ACP › Extensions › Human Verify › Check-up** and run the diagnostic check-up.
-4. If all checks pass, go to **Settings** and enable verification.
-
-After installation, verification is **disabled by default** so you can review your configuration before going live.
-
-## 2. How It Works
-
-1. On every request, the extension inspects the visitor immediately after the phpBB session initializes (`core.user_setup_after` event).
-2. If the visitor lacks a valid pass, they receive the verification page instead of the requested page.
-3. The visitor's browser executes a **proof-of-work computation** (SHA-256): it must calculate a nonce that, when combined with a seed, produces a hash starting with $N$ leading zeros. This takes a real browser a fraction of a second. For automated bots attempting to scrape thousands of pages, it imposes a heavy computational cost, and non-JavaScript clients fail automatically.
-4. Based on the selected ACP mode, an additional interactive challenge (checkbox, CAPTCHA, or sliding puzzle) may be required.
-5. Upon successful verification, the server sets a signed cookie (`<phpBB cookie name>_hv`), and the visitor is redirected back to their intended target page.
-
-Challenges are **signed via HMAC-SHA256** using a secret key generated during installation, requiring no server-side challenge storage. Each challenge expires after 10 minutes and is strictly **single-use**. Challenges are bound to the visitor's browser (`User-Agent`) and, optionally, their IP address.
-
-## 3. Challenge Types
-
-| Type | Visitor Experience | Requires GD |
-|---|---|---|
-| **Automatic** | Displays a "Verifying..." spinner, then grants seamless access | No |
-| **Interactive Checkbox** | Requires clicking a "Verify you are human" checkbox | No |
-| **CAPTCHA** | Requires entering a distorted text code (4–8 alphanumeric characters, case-insensitive) | Yes |
-| **Image Puzzle** | Requires solving a 3×3 or 4×4 tile sliding image puzzle | Yes |
-
-*Note: The background proof-of-work computation executes across all modes. It begins processing instantly as the page opens, typically completing before the visitor clicks.*
-
-In **Puzzle** mode, tiles can be swapped via drag-and-drop using a mouse, touch, or stylus. Alternatively, tapping two tiles sequentially swaps them, allowing full accessibility via keyboard navigation (Tab and Enter keys). An optional thumbnail preview of the solved image can be displayed alongside the puzzle.
-
-The puzzle generator uses randomly rendered landscape patterns by default. To use **custom images**, upload JPG or PNG files to `ext/salvocortesiano/humanverify/images/puzzle/`. A random image will be selected and center-cropped into a square ratio automatically.
-
-If the GD extension is missing or disabled, CAPTCHA and Puzzle modes gracefully fall back to the interactive checkbox challenge.
-
-## 4. Configuration Settings (ACP › Human Verify › Settings)
-
-### Visitor Verification
-
-- **Enable verification:** Master toggle to turn protection on or off.
-- **Verification type:** Choose from the four operational modes described above.
-- **Verification frequency:** Sets pass validity duration in hours. Quick presets range from "Every session" (0) to "30 days" (720 hours). Custom values up to 8760 hours are supported.
-- **Proof-of-work difficulty:** Scaled from 1 to 5; each increment multiplies required computation work by 16. **Level 4** is the recommended baseline. Level 5 may cause noticeable load times on low-powered mobile devices.
-- **Exclude logged-in users:** When enabled (default), authenticated board members bypass verification pages completely.
-- **Bind verification to IP address:** When enabled, changing IP addresses invalidates active passes. IPv6 tracking operates on a `/64` prefix basis.
-
-### Bot Detection & Interception
-
-- **Block known bots:** User agents matching the blocklist are immediately rejected with a `403 Forbidden` response.
-- **Block missing User-Agent requests:** Drops requests lacking a `User-Agent` header, typically associated with raw scripts.
-- **User-Agent blocklist:** Line-separated entries using partial substring matching. Lines beginning with `#` are treated as comments. Default blocklists include:
-  - **AI Scrapers:** GPTBot, ClaudeBot, CCBot, Bytespider, PerplexityBot, Amazonbot, meta-externalagent, Google-Extended, and others.
-  - **Aggressive SEO Crawlers:** Semrush, Ahrefs, MJ12, and others.
-  - **Automated Tooling:** curl, wget, python-requests, Go-http-client, HeadlessChrome, and others.
-  
-  Click **Reset default blocklist** to restore default patterns at any time.
-- **Allow search engines:** Allows legitimate bots indexed under **ACP › General › Spiders/Robots** to bypass verification. **Keep this enabled** to protect search indexing.
-- **Verify search engine authenticity:** Performs reverse and forward DNS checks to ensure crawlers identifying as Googlebot, Bingbot, Yandex, Baidu, Applebot, or DuckDuckBot originate from official IP blocks. Spoofed bots are either blocked or routed to verification depending on blocking preferences. Results are cached per IP for 24 hours.
-- **IP Whitelist:** Exclude specific IP addresses or CIDR ranges (IPv4/IPv6) from verification or blocking. Useful for administrator IPs, external monitoring tools, or search indexing proxies like Meilisearch.
-
-### CAPTCHA & Puzzle Settings
-
-- **CAPTCHA code length:** Configurable from 4 to 8 characters. Ambiguous character sets (e.g., `0`/`O`, `1`/`I`/`L`) are excluded to avoid user error.
-- **Puzzle dimensions:** Select either a 3×3 or 4×4 grid layout.
-- **Show reference image:** Displays a miniature preview of the solved image next to the puzzle.
-
-### Page Appearance Settings
-
-Verification and Access Denied templates share unified styling:
-- Forum title positioned at top-left, with an optional logo rendered directly underneath.
-- Serif display headers accompanied by custom vector illustration and soft-drop shadows.
-- System metadata block displaying Request ID, IP address, and timestamp.
-- Automatic system-level dark mode support.
-- Fully responsive single-column mobile layout.
-
-The central illustration features an animated shield element reflecting verification status. During checks, a scanline animation sweeps the shield alongside a pulsing status indicator. Successful verification transitions the indicator to green with a checkmark. Rejections or errors switch the status indicator to red with an error icon. Systems with reduced motion enabled (`prefers-reduced-motion`) render static states automatically.
-
-Access Denied pages include a **Contact Administrator** action button pre-filling the board contact email and appending the active Request ID to the subject line.
-
-- **Accent color:** Defines primary colors for interactive buttons, borders, and scanning effects. The default hex value (`#22577a`) matches unified board UI themes.
-- **Logo URL:** Specify an absolute image URL (`https://...`) or relative web path (`/path/to/image`). Rendered beneath the board title. Leave blank to hide.
-- **Oval logo mask:** Toggle rounded corner masks. Square assets wrap into circular avatars; rectangular assets wrap into oval designs.
-
-### IP Logging & Temporary Banning
-
-- **Enable IP logging:** Toggles local database logging of challenge attempts.
-- **Log retention period:** Defines retention length in days before automated cron cleanup (set to `0` to disable automatic deletion).
-- **Pruning frequency:** Configures phpBB cron cleanup interval settings (minimum 5 minutes, maximum 30 days; default set to every 24 hours).
-- **Failed attempt threshold & Ban duration:** Reaching $N$ consecutive failed verification attempts triggers an automatic $X$-minute IP block returning `403 Forbidden`.
-  - Passing a verification challenge resets failure counters immediately.
-  - Failure counters reset automatically if the elapsed time since the last failure exceeds the ban duration window.
-  - Visitors holding active, valid passes are never blocked, even when sharing a public IP with a blocked actor.
-
-### Live Preview Mode
-
-Preview links are provided beneath verification types in the ACP. These links render functional verification templates in a new tab without logging IP data or requiring pass generation, allowing testing even when verification is disabled or when logged in as an administrator.
-
-### Global Pass Invalidation
-
-Invalidates all currently active guest passes board-wide. Forces every unauthenticated guest visitor to complete verification on their next page navigation. Useful for mitigating active bot traffic surges.
-
-*Note: Authenticated users automatically receive updated passes without challenges. Testing global resets should be conducted via private browsing windows or secondary guest browser sessions.*
-
-## 5. IP Log Management (ACP › Human Verify › IP Log)
-
-- Summary counters display total recorded IPs, total verification pages served, passed challenges, failed attempts, and active temporary blocks.
-- Supports search indexing (full or partial IP matches) and filtering by challenge outcome status.
-- Data tables feature sortable header columns.
-- Table columns provide:
-  - First and last recorded activity timestamps.
-  - Counter breakdowns for attempt metrics.
-  - Latest challenge result alongside used verification type.
-  - Full `User-Agent` strings via hover tooltips.
-  - Direct Whois lookup links.
-  - Status badges denoting active temporary IP bans.
-- Available record actions:
-  - **Delete:** Removes an individual IP entry.
-  - **Delete Selected:** Batch deletes marked entries.
-  - **Unban Selected:** Clears active temporary blocks on marked entries.
-  - **Empty Log:** Purges entire log table following confirmation.
-- Administrative log actions are audited directly within the phpBB Administrator Log.
-
-## 6. Diagnostic Check-up Tool (ACP › Human Verify › Check-up)
-
-Executes 16 real-time structural and configuration tests, reporting step-by-step progress metrics and diagnostic logs:
-
-1. PHP version check.
-2. phpBB version check.
-3. Core configuration inspection (including SEO crawlers visibility warnings).
-4. Cryptographic function verification.
-5. HMAC token signing, cookie integrity, and tampered payload rejection checks.
-6. Proof-of-work performance benchmarking and execution estimates.
-7. GD graphics library availability checks.
-8. CAPTCHA generation and string validation checks.
-9. Puzzle image rendering and tile solution validation checks.
-10. Database log table read/write/delete query checks.
-11. Challenge token cache re-use prevention checks.
-12. Cookie configuration audit (warns if HTTPS is active but phpBB secure cookies are disabled).
-13. Extension filesystem integrity inspection.
-14. Translation array matching between Italian and English language files.
-15. User-Agent blocklist integrity and whitelist rule syntax validation.
-16. Automated pruning task audit: evaluates phpBB cron health. Identifies configuration mismatches (e.g., boards set to system cron lacking active crontabs, common on local development environments or shared web hosts like Altervista). Validates task scheduling state and verifies session maintenance activity. Performs a test prune run if no prior executions are recorded.
-
-### Manual Cron Tools
-
-- **Prune Now:** Immediately purges IP log entries exceeding configured retention windows and reports deleted record counts.
-- **Run Cron Tasks:** Manually triggers queued phpBB core and extension cron tasks sequentially with a visual progress indicator.
-  - Respects phpBB cron locking mechanisms to prevent concurrent task collisions.
-  - Displays task execution timing metrics and completion statuses.
-  - Provides administrative overrides when automated board crons are stalled.
-
-## 7. Execution Context & Page Routing
-
-Verification challenges display **in-place at the requested URL** without external HTTP redirects during initial unauthenticated visits (covering index, forum displays, topic views, member profiles, search queries, login attempts, and registration forms). Following successful completion, the target resource renders normally.
-
-Request routing evaluates criteria sequentially in the following order:
-
-1. **Pass Condition:** Verification disabled, route excluded, or IP whitelisted -> Grant access.
-2. **Block Condition:** User-Agent matches blocklist or header is missing -> Render Access Denied (`403`).
-3. **Search Engine Condition:** Known search bot recognized by phpBB -> Grant access. If reverse DNS validation is enabled and fails -> Block request.
-4. **Authenticated Session Condition:** Logged-in user (with "Exclude logged-in users" active) -> Silent pass issuance and access granted.
-5. **Active Pass Condition:** Valid verification cookie detected -> Grant access. Evaluated prior to temporary ban checks to protect users on shared IP networks (CGNAT/corporate proxies).
-6. **Temporary Ban Condition:** Consecutive failure limit reached for IP -> Render Access Denied (`403`).
-7. **Challenge Fallback:** Serves verification page.
-
-## 8. Excluded Paths
-
-Verification is disabled by default on the following core endpoints:
-- Administration Control Panel (ACP)
-- phpBB Cron runners (`cron.php`, `app.php/cron/...`)
-- Syndication feeds (`app.php/feed`)
-- Attachment and avatar delivery (`download/file.php`)
-- User logout endpoints (`ucp.php?mode=logout`)
-- Command Line Interface executions (`bin/phpbbcli.php`)
-
-In addition, active `POST` form submissions and `AJAX` requests carry a 24-hour grace window after pass expiration to prevent data loss during long form authoring sessions.
-
-## 9. Known Technical Limitations
-
-- **Application-Layer Scope:** This extension is not a network edge firewall. Request payloads process through PHP and phpBB layers before interception. For volumetric DDoS mitigation, upstream network protections (such as Cloudflare) remain recommended.
-- **Advanced Headless Browsers:** Fully emulated browser environments (e.g., Playwright/Puppeteer with custom evasions) may pass client checks. However, required proof-of-work processing significantly increases the resource cost per request for automated scraping tools.
-- **Checkbox Mode Security:** The standalone checkbox serves primarily as an interactive friction point; primary automated enforcement relies on the concurrent background proof-of-work challenge.
-- **Privacy Compliance:** Storing visitor IP addresses constitutes handling personally identifiable information (PII). Ensure your board's Privacy Policy accurately reflects IP logging practices and retention windows.
-
-## 10. File Structure
-
-```text
-salvocortesiano/humanverify/
-├── composer.json, ext.php
-├── acp/                 main_info.php, main_module.php
-├── adm/style/           ACP templates (settings, log, check-up, header, credits)
-├── config/services.yml
-├── controller/          acp_controller.php
-├── core/                challenge.php     – tokens, proof-of-work, CAPTCHA, puzzle, cookies
-│                        bot_detector.php  – User-Agent rules, whitelists, search engine DNS
-│                        ip_log.php        – IP log handling
-│                        checkup.php       – Diagnostic Check-up suite
-├── cron/task/           prune_log.php     – Automated log pruning worker
-├── event/               main_listener.php – Request interception event hooks
-├── images/puzzle/       (Optional) Custom puzzle source images
-├── language/it, en/     common.php, info_acp_humanverify.php
-├── migrations/          install_v100.php
-└── styles/all/          Template, CSS, and JS assets for verification pages
-```
-
-## 11. Uninstallation Procedure
-
-1. Navigate to **ACP › Customize › Extension management** and disable **Human Verify**.
-2. Click **Delete data** to purge the `phpbb_hv_log` table and associated extension settings.
-3. Remove the directory `ext/salvocortesiano/humanverify/` from your web server.
-
-## 12. Changelog
-
-- **1.0.10**
-  - Valid passes are now checked before temporary IP ban evaluation, preventing legitimate users on shared networks (e.g., mobile carriers, corporate offices) from being blocked by bad actors.
-  - Failed attempt counters now reset automatically after the ban duration window expires, preventing re-banning on a single subsequent failure.
-- **1.0.9**
-  - Fixed board title layout hierarchy to keep board name fixed at top-left with logos rendering underneath.
-  - Introduced *Oval logo mask* configuration toggle.
-  - Added *Reset default* option for custom accent colors.
-- **1.0.8** – Fixed issue where verification pages rendered without CSS styling or JavaScript dependencies due to path resolution errors introduced in 1.0.3.
-- **1.0.7** – Introduced live verification page previews in ACP for all challenge types. Clarified behavior of *Global Pass Invalidation* when acting on authenticated administrative sessions.
-- **1.0.6**
-  - Added configurable automated pruning frequency settings.
-  - Integrated manual log pruning and global cron task execution tools directly into the Diagnostic Check-up suite.
-  - Enhanced cron diagnostic reporting to detect missing system crontabs.
-- **1.0.5** – Fixed ACP accent color picker input validation and value synchronization issues.
-- **1.0.4**
-  - Enabled silent pass issuance for authenticated users to eliminate verification prompts post-logout or upon session expiry.
-  - Added explicit exclusions for logout endpoints (`ucp.php?mode=logout`).
-- **1.0.3**
-  - Redesigned verification and Access Denied UI layouts with unified vector graphics, scanning animations, and dark mode support.
-  - Added accent color customization and logo URL options.
-  - Added pre-filled "Contact Administrator" button on Access Denied templates.
-- **1.0.2**
-  - Fixed permission errors during cookie diagnostic checks.
-  - Updated pruning diagnostics to distinguish fresh extension installations from stalled crons.
-  - Resolved issue where proof-of-work execution benchmarks reported `0 ms`.
-- **1.0.1** – Ensured localized ACP module titles persist correctly in board logs upon extension installation.
-- **1.0.0** – Initial release.
-
-**Versione:** 1.0.10  
+**Versione:** 1.0.11  
 **Autore:** Salvo Cortesiano – Le Ombre della Rete 360° (info@netshadows.de)  
 **Requisiti:** phpBB 3.3.0 – 3.3.x (testata per 3.3.19), PHP 7.4 o superiore (consigliato 8.2), estensione GD per captcha e puzzle  
 **Licenza:** GPL-2.0
@@ -343,7 +68,20 @@ Se GD manca, captcha e puzzle ripiegano automaticamente sulla casella.
   Il pulsante **Ripristina l'elenco iniziale** lo riporta com'era.
 - **Lascia passare i motori di ricerca:** i bot di ACP › Generale › Bot entrano senza verifica. **Lascialo attivo**, altrimenti il forum rischia di sparire da Google.
 - **Controlla che i motori di ricerca siano autentici:** verifica con DNS inverso e diretto che Googlebot, Bingbot, Yandex, Baidu, Applebot e DuckDuckBot vengano davvero dai loro server. I falsi vengono bloccati, oppure mandati alla verifica se il blocco bot è spento. Il risultato resta in cache 24 ore per IP.
-- **IP sempre ammessi:** indirizzi singoli o intervalli CIDR, IPv4 e IPv6, che non vengono mai verificati né bloccati. Utile per il tuo IP, per servizi di monitoraggio o per il server Meilisearch.
+- **IP sempre ammessi:** indirizzi singoli o intervalli CIDR, IPv4 e IPv6, che non vengono mai verificati né bloccati. Utile per il tuo IP o per servizi di monitoraggio esterni che visitano il forum. Non serve per i servizi che il forum contatta da sé, come Meilisearch.
+
+### Pagine escluse dalla verifica
+
+Alcuni indirizzi del forum non vengono aperti da persone, ma da **altri server**. L'esempio più importante è PayPal: dopo ogni donazione avvisa l'estensione PayPal Donation (skouat/ppde) all'indirizzo `app.php/ipn-listener`, cioè l'**IPN**. Solo in quel momento la donazione viene registrata e il donatore viene promosso al gruppo dei donatori. Un server non ha un browser e non può superare la verifica: se ricevesse la pagina di verifica, la donazione andrebbe persa senza nessun errore visibile.
+
+- **Escludi automaticamente gli indirizzi di callback** (consigliato: Sì): gli indirizzi `app.php` che contengono come parola *ipn, webhook, callback, notify, listener, postback* o *hook* non ricevono mai la verifica. Vale anche per le estensioni che installerai in futuro.
+- **Percorsi esclusi:** elenco di regole, una per riga (`#` per i commenti). L'elenco iniziale contiene `/ipn-listener`, che si può ripristinare con un clic.
+  - `/percorso`: indirizzo `app.php`, vale anche per i sottopercorsi. `*` vale per qualsiasi testo, per esempio `/stripe/*/hook`.
+  - `pagina.php`: uno script del forum.
+  - `pagina.php?nome=valore`: lo script solo con quei parametri, dove il valore `*` vale per qualsiasi valore. Esempio: `memberlist.php?mode=contactadmin`.
+- **Indirizzi di callback presenti sul forum:** tabella con tutti gli indirizzi delle estensioni installate che sembrano chiamate da altri server, con l'estensione proprietaria e lo stato. Lo stato può essere *Escluso (regola …)*, *Escluso (automatico)* oppure **NON escluso**. Devono risultare tutti esclusi.
+
+**Rete di sicurezza.** Se una richiesta POST, PUT o DELETE senza pass arrivasse comunque alla verifica, la pagina risponde con il codice **403** invece di 200. Così PayPal o qualunque altro servizio capisce che l'invio non è riuscito e **lo ritenta più tardi**, invece di considerarlo consegnato. Una persona con il browser vede comunque la normale pagina di verifica.
 
 ### Captcha e puzzle
 
@@ -409,7 +147,7 @@ Gli utenti connessi, amministratore compreso, ricevono subito un pass nuovo senz
 
 ## 6. Check-up (ACP › Human Verify › Check-up)
 
-Il check-up esegue 16 test uno alla volta, con barra di avanzamento e percentuale reale, e segnala esito e dettagli di ciascuno:
+Il check-up esegue 17 test uno alla volta, con barra di avanzamento e percentuale reale, e segnala esito e dettagli di ciascuno:
 
 1. Versione PHP
 2. Versione phpBB
@@ -427,6 +165,7 @@ Il check-up esegue 16 test uno alla volta, con barra di avanzamento e percentual
 14. File di lingua italiano e inglese con le stesse chiavi
 15. Elenco bot e validità della whitelist
 16. Pulizia automatica del registro: se il cron di phpBB è fermo, indica il motivo. Distingue il forum impostato sul cron di sistema senza un cron di sistema attivo, caso tipico di una copia di prova su un hosting come Altervista, dal cron "web" che non parte. Inoltre controlla che il compito sia registrato nel cron di phpBB e che il cron giri davvero, guardando l'ultimo riordino delle sessioni. Se la pulizia non è mai partita, come subito dopo l'installazione, il check-up la esegue una volta per provarla.
+17. Indirizzi di callback (IPN, webhook): cerca tra le estensioni installate gli indirizzi chiamati da altri server e segnala con un **errore** quelli che riceverebbero la verifica. Controlla anche che le regole dei percorsi esclusi siano scritte correttamente.
 
 ### Strumenti cron (in fondo al Check-up)
 
@@ -442,7 +181,7 @@ La pagina compare **al posto della pagina richiesta**, allo stesso indirizzo e s
 
 Prima di mostrarla, l'estensione controlla queste condizioni in ordine:
 
-1. Verifica spenta, pagina esclusa (vedi sotto) o IP nella whitelist: il visitatore entra.
+1. Pagina esclusa (vedi sotto, compresi i percorsi esclusi e gli indirizzi di callback), verifica spenta o IP nella whitelist: il visitatore entra.
 2. User-agent nell'elenco dei bot, oppure user-agent vuoto: pagina "Accesso negato".
 3. Motore di ricerca riconosciuto da phpBB: entra. Se è attivo il controllo DNS e il motore risulta falso, viene bloccato.
 4. **Utente connesso** (con "Escludi gli utenti connessi" attivo): entra e riceve in silenzio il pass. Così dopo il logout, o se la sessione scade, non vede la verifica fino alla scadenza del pass.
@@ -457,6 +196,8 @@ Prima di mostrarla, l'estensione controlla queste condizioni in ordine:
 - i feed (`app.php/feed`);
 - `download/file.php` (allegati e avatar);
 - la disconnessione (`ucp.php?mode=logout`);
+- gli indirizzi di callback chiamati da altri server, come l'IPN di PayPal Donation (`app.php/ipn-listener`), con l'esclusione automatica attiva;
+- i **percorsi esclusi** scelti in ACP;
 - l'uso da riga di comando (`bin/phpbbcli.php`).
 
 I moduli inviati in **POST** e le richieste **AJAX** hanno 24 ore di tolleranza dopo la scadenza del pass. Così un visitatore ospite che scrive un messaggio lungo non perde il testo se il pass scade proprio in quel momento.
@@ -481,11 +222,12 @@ salvocortesiano/humanverify/
 │                        bot_detector.php – user-agent, whitelist, DNS motori di ricerca
 │                        ip_log.php       – registro IP
 │                        checkup.php      – test del Check-up
+│                        exclusions.php   – percorsi esclusi e indirizzi di callback
 ├── cron/task/           prune_log.php   – pulizia automatica del registro
 ├── event/               main_listener.php – intercettazione delle richieste
 ├── images/puzzle/       (facoltativa) le tue foto per il puzzle
 ├── language/it, en/     common.php, info_acp_humanverify.php
-├── migrations/          install_v100.php
+├── migrations/          install_v100.php e aggiornamenti v101 … v1011
 └── styles/all/          template e foglio di stile/script della pagina di verifica
 ```
 
@@ -497,6 +239,11 @@ salvocortesiano/humanverify/
 
 ## 12. Cronologia delle versioni
 
+- **1.0.11**
+  - Corretto: l'IPN di PayPal Donation (`app.php/ipn-listener`) riceveva la pagina di verifica, quindi le donazioni non venivano registrate e i donatori non venivano promossi.
+  - Nuova sezione *Pagine escluse dalla verifica*: esclusione automatica degli indirizzi di callback (IPN, webhook…), elenco di percorsi esclusi con `/ipn-listener` già inserito e tabella degli indirizzi di callback presenti sul forum.
+  - Rete di sicurezza: le richieste POST senza pass ricevono il codice 403, così i servizi esterni ritentano l'invio.
+  - Nuovo test del Check-up *Indirizzi di callback*.
 - **1.0.10**
   - Il pass valido viene controllato prima del blocco temporaneo: chi condivide l'IP con un bot (rete mobile, ufficio) non viene più bloccato.
   - Il contatore dei tentativi falliti riparte da zero dopo la durata del blocco, invece di bloccare di nuovo l'IP al primo errore.

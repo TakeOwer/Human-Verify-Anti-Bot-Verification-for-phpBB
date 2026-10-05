@@ -35,6 +35,9 @@ class main_listener implements EventSubscriberInterface
 	/** @var \phpbb\auth\auth */
 	protected $auth;
 
+	/** @var \salvocortesiano\humanverify\core\exclusions */
+	protected $exclusions;
+
 	/** @var \phpbb\template\template */
 	protected $template;
 
@@ -56,9 +59,10 @@ class main_listener implements EventSubscriberInterface
 	/** @var bool */
 	protected $done = false;
 
-	public function __construct($config, $request, $symfony_request, $user, $language, $template, $path_helper, $challenge, $ip_log, $bot_detector, $php_ext, $auth)
+	public function __construct($config, $request, $symfony_request, $user, $language, $template, $path_helper, $challenge, $ip_log, $bot_detector, $php_ext, $auth, $exclusions)
 	{
 		$this->auth = $auth;
+		$this->exclusions = $exclusions;
 		$this->config = $config;
 		$this->request = $request;
 		$this->symfony_request = $symfony_request;
@@ -226,16 +230,27 @@ class main_listener implements EventSubscriberInterface
 			return true;
 		}
 
-		if ($script === 'app.' . $this->php_ext)
+		$path = ($script === 'app.' . $this->php_ext) ? (string) $this->symfony_request->getPathInfo() : '';
+
+		if ($path !== '' && preg_match('#^/(cron|feed)(/|$)#', $path))
 		{
-			$path = (string) $this->symfony_request->getPathInfo();
-			if (preg_match('#^/(cron|feed)(/|$)#', $path))
-			{
-				return true;
-			}
+			return true;
 		}
 
-		return false;
+		// indirizzi chiamati da altri server (IPN di PayPal, webhook, callback…):
+		// non hanno un browser e non potrebbero mai superare la verifica
+		if ($path !== '' && $this->exclusions->auto_enabled() && $this->exclusions->is_callback_path($path))
+		{
+			return true;
+		}
+
+		// percorsi esclusi dall'amministratore in ACP
+		$request = $this->request;
+		$get_param = function ($name) use ($request) {
+			return $request->variable($name, '');
+		};
+
+		return $this->exclusions->match_rule($script, $path, $get_param) !== false;
 	}
 
 	protected function get_board_url()
@@ -292,7 +307,12 @@ class main_listener implements EventSubscriberInterface
 			'U_HV_PREVIEW'		=> $image . 'preview',
 		]);
 
-		$this->output('@salvocortesiano_humanverify/humanverify_challenge.html', 200);
+		// Rete di sicurezza: una richiesta POST (o PUT, DELETE…) senza pass che arriva qui
+		// è quasi sempre un server (IPN, webhook) non escluso. Con un codice di errore il servizio
+		// capisce che l'invio non è riuscito e lo ritenta, invece di considerarlo consegnato.
+		// Il browser di una persona mostra comunque la pagina di verifica.
+		$method = strtoupper((string) $this->request->server('REQUEST_METHOD', 'GET'));
+		$this->output('@salvocortesiano_humanverify/humanverify_challenge.html', in_array($method, ['GET', 'HEAD'], true) ? 200 : 403);
 	}
 
 	/**

@@ -125,6 +125,52 @@
 	</fieldset>
 
 	<fieldset>
+		<legend>{{ lang('ACP_HV_EXCLUSIONS') }}</legend>
+		<p>{{ lang('ACP_HV_EXCLUSIONS_EXPLAIN') }}</p>
+		<dl>
+			<dt><label for="hv_auto_exclude_callbacks">{{ lang('ACP_HV_AUTO_CALLBACKS') ~ lang('COLON') }}</label><br><span>{{ lang('ACP_HV_AUTO_CALLBACKS_EXPLAIN') }}</span></dt>
+			<dd>
+				<label><input type="radio" class="radio" id="hv_auto_exclude_callbacks" name="hv_auto_exclude_callbacks" value="1"{% if HV_AUTO_EXCLUDE_CALLBACKS %} checked="checked"{% endif %}> {{ lang('YES') }}</label>
+				<label><input type="radio" class="radio" name="hv_auto_exclude_callbacks" value="0"{% if not HV_AUTO_EXCLUDE_CALLBACKS %} checked="checked"{% endif %}> {{ lang('NO') }}</label>
+			</dd>
+		</dl>
+		<dl>
+			<dt><label for="hv_excluded_paths">{{ lang('ACP_HV_EXCLUDED_PATHS') ~ lang('COLON') }}</label><br><span>{{ lang('ACP_HV_EXCLUDED_PATHS_EXPLAIN') }}</span></dt>
+			<dd>
+				<textarea id="hv_excluded_paths" name="hv_excluded_paths" rows="6" cols="45">{{ HV_EXCLUDED_PATHS }}</textarea><br>
+				<input type="submit" class="button2" name="hv_reset_paths" value="{{ lang('ACP_HV_RESET_PATHS') }}">
+			</dd>
+		</dl>
+		<dl>
+			<dt><label>{{ lang('ACP_HV_CALLBACKS_FOUND') ~ lang('COLON') }}</label><br><span>{{ lang('ACP_HV_CALLBACKS_FOUND_EXPLAIN') }}</span></dt>
+			<dd>
+				{% if hv_callbacks %}
+				<table class="table1 hv-tests" style="max-width: 760px;">
+					<thead>
+					<tr>
+						<th>{{ lang('ACP_HV_CALLBACK_PATH') }}</th>
+						<th>{{ lang('ACP_HV_CALLBACK_OWNER') }}</th>
+						<th>{{ lang('ACP_HV_TEST_RESULT') }}</th>
+					</tr>
+					</thead>
+					<tbody>
+					{% for cb in hv_callbacks %}
+					<tr>
+						<td><code>app.php{{ cb.PATH }}</code></td>
+						<td>{{ cb.OWNER }}</td>
+						<td><span class="hv-test-status hv-test-{{ cb.STATUS }}">{{ cb.BY }}</span></td>
+					</tr>
+					{% endfor %}
+					</tbody>
+				</table>
+				{% else %}
+				<p>{{ lang('ACP_HV_CALLBACKS_NONE') }}</p>
+				{% endif %}
+			</dd>
+		</dl>
+	</fieldset>
+
+	<fieldset>
 		<legend>{{ lang('ACP_HV_CAPTCHA_PUZZLE') }}</legend>
 		<dl>
 			<dt><label for="hv_captcha_length">{{ lang('ACP_HV_CAPTCHA_LENGTH') ~ lang('COLON') }}</label><br><span>{{ lang('ACP_HV_CAPTCHA_LENGTH_EXPLAIN') }}</span></dt>

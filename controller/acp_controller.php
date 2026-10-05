@@ -58,11 +58,19 @@ class acp_controller
 	/** @var \phpbb\lock\db */
 	protected $cron_lock;
 
+	/** @var \salvocortesiano\humanverify\core\exclusions */
+	protected $exclusions;
+
+	/** @var \phpbb\routing\router */
+	protected $router;
+
 	/** @var string */
 	protected $u_action;
 
-	public function __construct($config, $config_text, $request, $template, $language, $user, $log, $pagination, $ext_manager, $ip_log, $checkup, $bot_detector, $cron_manager, $cron_lock)
+	public function __construct($config, $config_text, $request, $template, $language, $user, $log, $pagination, $ext_manager, $ip_log, $checkup, $bot_detector, $cron_manager, $cron_lock, $exclusions, $router)
 	{
+		$this->exclusions = $exclusions;
+		$this->router = $router;
 		$this->cron_manager = $cron_manager;
 		$this->cron_lock = $cron_lock;
 		$this->config = $config;
@@ -149,6 +157,18 @@ class acp_controller
 			trigger_error($this->language->lang('ACP_HV_AGENTS_RESET_DONE') . adm_back_link($this->u_action));
 		}
 
+		if ($this->request->is_set_post('hv_reset_paths'))
+		{
+			if (!check_form_key(self::FORM_KEY))
+			{
+				trigger_error($this->language->lang('FORM_INVALID') . adm_back_link($this->u_action), E_USER_WARNING);
+			}
+
+			$this->config_text->set('hv_excluded_paths', \salvocortesiano\humanverify\core\exclusions::DEFAULT_PATHS);
+			$this->log_admin('LOG_HV_PATHS_RESET');
+			trigger_error($this->language->lang('ACP_HV_PATHS_RESET_DONE') . adm_back_link($this->u_action));
+		}
+
 		$values = [
 			'hv_enabled'			=> $this->request->variable('hv_enabled', (int) $this->config['hv_enabled']),
 			'hv_mode'				=> $this->request->variable('hv_mode', (string) $this->config['hv_mode']),
@@ -170,6 +190,7 @@ class acp_controller
 			'hv_accent_color'		=> trim($this->request->variable('hv_accent_color', (string) $this->config['hv_accent_color'])),
 			'hv_logo_url'			=> trim($this->request->variable('hv_logo_url', (string) $this->config['hv_logo_url'])),
 			'hv_logo_round'			=> $this->request->variable('hv_logo_round', (int) $this->config['hv_logo_round']),
+			'hv_auto_exclude_callbacks'	=> $this->request->variable('hv_auto_exclude_callbacks', (int) $this->config['hv_auto_exclude_callbacks']),
 		];
 
 		// phpBB applica htmlspecialchars ai dati inviati: si lavora sempre sul testo decodificato
@@ -181,6 +202,7 @@ class acp_controller
 		$prune_every = $this->request->variable('hv_prune_every', (int) ($prune_unit_default === 'hours' ? $prune_gc / 3600 : $prune_gc / 60));
 
 		$bad_agents = htmlspecialchars_decode($this->request->variable('hv_bad_agents', htmlspecialchars((string) $this->config_text->get('hv_bad_agents')), true), ENT_COMPAT);
+		$excluded_paths = htmlspecialchars_decode($this->request->variable('hv_excluded_paths', htmlspecialchars((string) $this->config_text->get('hv_excluded_paths')), true), ENT_COMPAT);
 		$whitelist = htmlspecialchars_decode($this->request->variable('hv_ip_whitelist', htmlspecialchars((string) $this->config_text->get('hv_ip_whitelist')), true), ENT_COMPAT);
 
 		if ($this->request->is_set_post('submit'))
@@ -241,6 +263,19 @@ class acp_controller
 				$errors[] = $this->language->lang('ACP_HV_ERR_PRUNE_GC');
 			}
 
+			$invalid_paths = [];
+			foreach ($this->exclusions->parse($excluded_paths) as $rule)
+			{
+				if (!$this->exclusions->is_valid_rule($rule))
+				{
+					$invalid_paths[] = $rule;
+				}
+			}
+			if ($invalid_paths)
+			{
+				$errors[] = $this->language->lang('ACP_HV_ERR_PATHS', implode(', ', array_map('htmlspecialchars', $invalid_paths)));
+			}
+
 			$invalid = [];
 			foreach ($this->bot_detector->parse_list($whitelist) as $entry)
 			{
@@ -263,6 +298,7 @@ class acp_controller
 				$this->config->set('hv_prune_gc', $prune_seconds);
 
 				$this->config_text->set_array([
+					'hv_excluded_paths'	=> implode("\n", $this->exclusions->parse($excluded_paths)),
 					'hv_bad_agents'		=> implode("\n", $this->bot_detector->parse_list($bad_agents)),
 					'hv_ip_whitelist'	=> implode("\n", $this->bot_detector->parse_list($whitelist)),
 				]);
@@ -285,6 +321,17 @@ class acp_controller
 			]);
 		}
 
+		foreach ($this->exclusions->find_callback_routes($this->router->get_routes()) as $item)
+		{
+			$this->template->assign_block_vars('hv_callbacks', [
+				'PATH'		=> htmlspecialchars($item['path'], ENT_QUOTES),
+				'OWNER'		=> htmlspecialchars($item['owner'], ENT_QUOTES),
+				'STATUS'	=> $item['by'] === '' ? 'error' : 'ok',
+				'BY'		=> $item['by'] === '' ? $this->language->lang('ACP_HV_CALLBACK_NOT_EXCLUDED')
+					: ($item['by'] === 'auto' ? $this->language->lang('ACP_HV_CALLBACK_BY_AUTO') : $this->language->lang('ACP_HV_CALLBACK_BY_RULE', htmlspecialchars($item['by'], ENT_QUOTES))),
+			]);
+		}
+
 		foreach ([0, 1, 6, 12, 24, 72, 168, 720] as $hours)
 		{
 			$this->template->assign_block_vars('hv_validity_presets', [
@@ -300,6 +347,7 @@ class acp_controller
 			'S_GD'				=> extension_loaded('gd'),
 			'HV_BAD_AGENTS'		=> htmlspecialchars($bad_agents, ENT_COMPAT),
 			'HV_IP_WHITELIST'	=> htmlspecialchars($whitelist, ENT_COMPAT),
+			'HV_EXCLUDED_PATHS'	=> htmlspecialchars($excluded_paths, ENT_COMPAT),
 			'HV_YOUR_IP'		=> $this->user->ip,
 			'HV_PRUNE_EVERY'	=> $prune_every,
 			'S_HV_PRUNE_HOURS'	=> $prune_unit === 'hours',

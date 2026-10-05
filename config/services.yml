@@ -20,6 +20,12 @@ services:
             - '@config_text'
             - '@cache.driver'
 
+    salvocortesiano.humanverify.exclusions:
+        class: salvocortesiano\humanverify\core\exclusions
+        arguments:
+            - '@config'
+            - '@config_text'
+
     salvocortesiano.humanverify.checkup:
         class: salvocortesiano\humanverify\core\checkup
         arguments:
@@ -34,6 +40,8 @@ services:
             - '%core.root_path%'
             - '@request'
             - '@cron.manager'
+            - '@salvocortesiano.humanverify.exclusions'
+            - '@router'
 
     salvocortesiano.humanverify.listener:
         class: salvocortesiano\humanverify\event\main_listener
@@ -50,6 +58,7 @@ services:
             - '@salvocortesiano.humanverify.bot_detector'
             - '%core.php_ext%'
             - '@auth'
+            - '@salvocortesiano.humanverify.exclusions'
         tags:
             - { name: event.listener }
 
@@ -70,6 +79,8 @@ services:
             - '@salvocortesiano.humanverify.bot_detector'
             - '@cron.manager'
             - '@cron.lock_db'
+            - '@salvocortesiano.humanverify.exclusions'
+            - '@router'
 
     salvocortesiano.humanverify.cron.task.prune_log:
         class: salvocortesiano\humanverify\cron\task\prune_log

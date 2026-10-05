@@ -3,7 +3,7 @@
 	"type": "phpbb-extension",
 	"description": "Verifica anti-bot in stile Cloudflare per phpBB: verifica automatica proof-of-work, casella da cliccare, captcha o puzzle di immagini, blocco dei bot e registro IP.",
 	"homepage": "https://www.netshadows.de/ombra",
-	"version": "1.0.10",
+	"version": "1.0.11",
 	"time": "2026-10-04",
 	"keywords": ["phpbb", "extension", "anti-bot", "captcha", "proof-of-work", "puzzle", "scraper"],
 	"license": "GPL-2.0-only",
