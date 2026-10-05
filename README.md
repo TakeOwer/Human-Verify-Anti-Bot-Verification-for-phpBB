@@ -1,6 +1,6 @@
 # Human Verify – Verifica anti-bot per phpBB
 
-![Version](https://img.shields.io/badge/version-1.0.10-105080) ![phpBB](https://img.shields.io/badge/phpBB-3.3.x-377a33) ![PHP](https://img.shields.io/badge/PHP-%3E%3D7.4-377a33) ![License](https://img.shields.io/badge/license-GPL--2.0--only-7f7f7f)
+![Version](https://img.shields.io/badge/version-1.0.11-105080) ![phpBB](https://img.shields.io/badge/phpBB-3.3.x-377a33) ![PHP](https://img.shields.io/badge/PHP-%3E%3D7.4-377a33) ![License](https://img.shields.io/badge/license-GPL--2.0--only-7f7f7f)
 
 # Human Verify – Anti-Bot Verification for phpBB
 
